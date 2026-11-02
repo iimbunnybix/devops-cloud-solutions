@@ -15,6 +15,7 @@ Every problem folder has the same structure:
 <!-- INDEX:START -->
 | # | Problem |
 |---|---|
+| 001 | [Database recovers from a 2-minute blip, then goes down again under a retry storm](problems/001-retry-storm-backoff-jitter) |
 <!-- INDEX:END -->
 
 ## Run the tests
