@@ -16,6 +16,7 @@ Every problem folder has the same structure:
 | # | Problem |
 |---|---|
 | 001 | [Database recovers from a 2-minute blip, then goes down again under a retry storm](problems/001-retry-storm-backoff-jitter) |
+| 002 | [On-call is paged 30 times a week for noise, yet missed a real 40-minute outage](problems/002-slo-burn-rate-alerting) |
 <!-- INDEX:END -->
 
 ## Run the tests
