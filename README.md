@@ -19,6 +19,7 @@ Every problem folder has the same structure:
 | 002 | [On-call is paged 30 times a week for noise, yet missed a real 40-minute outage](problems/002-slo-burn-rate-alerting) |
 | 003 | [Canary passed its health gate, then the full rollout quadrupled checkout errors](problems/003-canary-analysis-gate) |
 | 004 | [Database volume filled up with no warning, while another server's disk alert paged every night for months](problems/004-disk-full-forecast-alert) |
+| 005 | [Every mobile client failed to connect to the payments API at 09:34 because its TLS certificate had expired](problems/005-tls-certificate-expiry-monitor) |
 <!-- INDEX:END -->
 
 ## Run the tests
