@@ -25,6 +25,7 @@ Every problem folder has the same structure:
 | 008 | [Search API replica count sawtoothed all day and p99 latency spiked every few minutes](problems/008-autoscaler-flapping-stabilization) |
 | 009 | [The database failed over in under a minute, but the order service kept erroring for two hours until it was restarted](problems/009-stale-dns-cache-after-failover) |
 | 010 | [The storage bill climbed every month after CI moved to per-PR environments, and the first cleanup script deleted a production volume](problems/010-orphaned-cloud-resources-cost) |
+| 011 | [Every deploy caused a burst of 502s, so the team stopped deploying during business hours](problems/011-graceful-shutdown-connection-draining) |
 <!-- INDEX:END -->
 
 ## Run the tests
