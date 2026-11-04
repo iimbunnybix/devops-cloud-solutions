@@ -18,6 +18,7 @@ Every problem folder has the same structure:
 | 001 | [Database recovers from a 2-minute blip, then goes down again under a retry storm](problems/001-retry-storm-backoff-jitter) |
 | 002 | [On-call is paged 30 times a week for noise, yet missed a real 40-minute outage](problems/002-slo-burn-rate-alerting) |
 | 003 | [Canary passed its health gate, then the full rollout quadrupled checkout errors](problems/003-canary-analysis-gate) |
+| 004 | [Database volume filled up with no warning, while another server's disk alert paged every night for months](problems/004-disk-full-forecast-alert) |
 <!-- INDEX:END -->
 
 ## Run the tests
