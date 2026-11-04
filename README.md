@@ -22,6 +22,7 @@ Every problem folder has the same structure:
 | 005 | [Every mobile client failed to connect to the payments API at 09:34 because its TLS certificate had expired](problems/005-tls-certificate-expiry-monitor) |
 | 006 | [A routine deploy silently undid an emergency memory fix, and the service started OOM-crashing again](problems/006-config-drift-detection) |
 | 007 | [The nightly database backup had not run for three weeks, and nobody was alerted](problems/007-cron-dead-mans-switch) |
+| 008 | [Search API replica count sawtoothed all day and p99 latency spiked every few minutes](problems/008-autoscaler-flapping-stabilization) |
 <!-- INDEX:END -->
 
 ## Run the tests
