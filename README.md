@@ -21,6 +21,7 @@ Every problem folder has the same structure:
 | 004 | [Database volume filled up with no warning, while another server's disk alert paged every night for months](problems/004-disk-full-forecast-alert) |
 | 005 | [Every mobile client failed to connect to the payments API at 09:34 because its TLS certificate had expired](problems/005-tls-certificate-expiry-monitor) |
 | 006 | [A routine deploy silently undid an emergency memory fix, and the service started OOM-crashing again](problems/006-config-drift-detection) |
+| 007 | [The nightly database backup had not run for three weeks, and nobody was alerted](problems/007-cron-dead-mans-switch) |
 <!-- INDEX:END -->
 
 ## Run the tests
