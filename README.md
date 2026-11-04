@@ -26,6 +26,7 @@ Every problem folder has the same structure:
 | 009 | [The database failed over in under a minute, but the order service kept erroring for two hours until it was restarted](problems/009-stale-dns-cache-after-failover) |
 | 010 | [The storage bill climbed every month after CI moved to per-PR environments, and the first cleanup script deleted a production volume](problems/010-orphaned-cloud-resources-cost) |
 | 011 | [Every deploy caused a burst of 502s, so the team stopped deploying during business hours](problems/011-graceful-shutdown-connection-draining) |
+| 012 | [The latency dashboard said p99 was 275 ms while customers on one host waited over two seconds](problems/012-averaged-percentiles-hide-latency) |
 <!-- INDEX:END -->
 
 ## Run the tests
