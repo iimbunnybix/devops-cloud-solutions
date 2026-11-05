@@ -14,7 +14,8 @@ certificate in the served chain, and reports:
   already have renewed it - the early signal that renewal is broken;
 * ``INCONSISTENT`` when backends behind one hostname serve different certs
   (a renewed cert that never reached some load-balancer nodes);
-* ``UNREACHABLE`` instead of silently skipping endpoints that fail to answer.
+* ``UNREACHABLE`` instead of silently skipping endpoints that fail to answer;
+* ``UNPARSEABLE`` when a served cert has a missing or malformed ``notAfter``.
 
 Fetching is injected (``fetch(host, address) -> list[dict]`` in the
 ``ssl.SSLSocket.getpeercert()`` format) so the logic is testable offline.
@@ -35,7 +36,7 @@ Fetch = Callable[[str, str], list[dict]]
 class Finding:
     host: str
     severity: str        # "page" | "ticket"
-    kind: str            # EXPIRED, CRITICAL, WARNING, RENEWAL_OVERDUE, INCONSISTENT, UNREACHABLE
+    kind: str            # EXPIRED, CRITICAL, WARNING, RENEWAL_OVERDUE, INCONSISTENT, UNREACHABLE, UNPARSEABLE
     detail: str
     days_left: float | None = None
 
@@ -86,9 +87,18 @@ class CertMonitor:
                     findings.append(Finding(host, "page", "UNREACHABLE",
                                             f"{addr}: {type(e).__name__}: {e}"))
                     continue
+                # Parse every expiry date before using any of them. A cert with a
+                # missing or garbled notAfter must become a finding for this
+                # address, not an exception that aborts the scan of every host.
+                try:
+                    expiries = [not_after_epoch(cert) for cert in chain]
+                except (KeyError, ValueError, TypeError) as e:
+                    findings.append(Finding(host, "page", "UNPARSEABLE",
+                                            f"{addr}: bad notAfter: {type(e).__name__}: {e}"))
+                    continue
                 served[addr] = tuple((c.get("serialNumber"), c["notAfter"]) for c in chain)
                 for pos, cert in enumerate(chain):
-                    left = (not_after_epoch(cert) - now) / DAY
+                    left = (expiries[pos] - now) / DAY
                     role = "leaf" if pos == 0 else f"chain[{pos}]"
                     label = f"{addr} {role} CN={_cn(cert)}"
                     if worst is None or left < worst[0]:

@@ -34,6 +34,7 @@ and evaluates the full served chain:
 | `RENEWAL_OVERDUE` | ≤ `renew_before_days − 2` (28 by default) | ticket |
 | `INCONSISTENT` | backends of one hostname serve different certs | ticket |
 | `UNREACHABLE` | probe failed or returned no chain | page |
+| `UNPARSEABLE` | a served cert has a missing or malformed `notAfter` | page |
 
 `RENEWAL_OVERDUE` is the key alert. It fires about three weeks before expiry,
 which is enough time to fix the automation calmly. The 2-day grace period

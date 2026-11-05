@@ -96,6 +96,25 @@ class FleetChecks(unittest.TestCase):
         self.assertEqual([(i.host, i.kind) for i in f], [("y", "EXPIRED")])
 
 
+class MalformedCertificates(unittest.TestCase):
+    def test_garbage_not_after_is_a_finding_and_other_hosts_still_page(self):
+        bad_cert = {"subject": (), "serialNumber": "7", "notAfter": "garbage"}
+        table = {("good", "a"): chain(-1), ("bad", "a"): [bad_cert]}
+        f = monitor(table).check({"bad": ["a"], "good": ["a"]})
+        self.assertEqual([(i.host, i.kind) for i in f],
+                         [("bad", "UNPARSEABLE"), ("good", "EXPIRED")])
+
+    def test_missing_not_after_is_a_page_not_a_crash(self):
+        table = {("bad", "a"): [{"subject": (), "serialNumber": "7"}]}
+        f = monitor(table).check({"bad": ["a"]})
+        self.assertEqual([(i.kind, i.severity) for i in f], [("UNPARSEABLE", "page")])
+
+    def test_healthy_backend_next_to_malformed_one_is_still_checked(self):
+        table = {("h", "a"): [{"subject": (), "serialNumber": "7"}], ("h", "b"): chain(3)}
+        f = monitor(table).check({"h": ["a", "b"]})
+        self.assertEqual(kinds(f), ["CRITICAL", "RENEWAL_OVERDUE", "UNPARSEABLE"])
+
+
 class Parsing(unittest.TestCase):
     def test_round_trip_openssl_format(self):
         s = format_not_after(NOW)
