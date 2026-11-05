@@ -46,6 +46,7 @@ Every problem folder has the same structure:
 | 029 | [Web servers failed every login with "No space left on device" while the disk dashboard showed 39% used](problems/029-inode-exhaustion-disk-alert) |
 | 030 | [Checkout was down for 40 minutes during a database maintenance window, and on-call never got the page](problems/030-overbroad-maintenance-silence) |
 | 031 | [Checkout failed for an hour after a deploy, and the error-rate alert stayed green because its metrics had disappeared](problems/031-alert-no-data-treated-as-healthy) |
+| 032 | [Customers were charged twice on the night the clocks went back, and in spring the daily finance report never arrived](problems/032-dst-local-time-cron-double-run) |
 <!-- INDEX:END -->
 
 ## Run the tests
