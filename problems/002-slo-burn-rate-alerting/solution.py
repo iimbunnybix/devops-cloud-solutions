@@ -30,11 +30,21 @@ class BurnRateAlerter:
         self._minutes: deque = deque(maxlen=self._max_window)   # (requests, errors)
 
     def _burn(self, minutes: int) -> float:
+        """Burn rate over the last `minutes` minutes.
+
+        After a restart the in-memory history is shorter than the window. Minutes
+        we have not seen are counted as traffic at the observed average rate with
+        zero errors, so a 5-minute blip on a fresh alerter is judged against a full
+        hour (as it would be with real healthy history) instead of against 5 minutes.
+        """
         window = list(self._minutes)[-minutes:]
         req = sum(r for r, _ in window)
         err = sum(e for _, e in window)
         if req == 0:
             return 0.0
+        missing_minutes = minutes - len(window)
+        if missing_minutes > 0:
+            req += (req / len(window)) * missing_minutes
         return (err / req) / self.budget
 
     def observe_minute(self, requests: int, errors: int) -> list[str]:

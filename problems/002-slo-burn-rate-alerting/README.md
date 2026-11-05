@@ -32,9 +32,14 @@ Replaying the incidents (2,000 requests/minute):
 | Scenario | Old rule (>1% for 5 min) | Burn-rate alerting |
 |---|---|---|
 | 2-minute blip at 20% errors | Pages (noise) | No page |
-| 3% errors for 40 min (the missed outage) | Pages, but was muted | Pages at minute 28 |
-| 10% errors | Pages | Pages at minute 8 |
+| 3% errors for 40 min (the missed outage) | Pages, but was muted | Pages at minute 29 |
+| 10% errors | Pages | Pages at minute 9 |
 | Total outage (50% errors) | Pages | Pages at minute 2 |
+
+After a restart the alerter's in-memory history is shorter than the long
+windows. Minutes it has not seen are counted as average traffic with zero
+errors, so a 5-minute blip right after a deploy of the alerter is judged over
+the full hour (no page), while a total outage still pages within 5 minutes.
 
 Detection speed scales with severity, and pages stop within ~30 minutes of a fix
 (the 6-hour rule's 30-minute short window).
@@ -42,6 +47,9 @@ Detection speed scales with severity, and pages stop within ~30 minutes of a fix
 ## Trade-offs
 - Needs enough traffic for error rates to be meaningful; low-traffic
   services need synthetic probes or longer windows.
+- Treating unseen minutes as healthy is optimistic: an outage that started
+  before the alerter restarted is under-counted until real history fills the
+  windows. Persisting counters (or reading them from the metrics store) avoids this.
 - Burn-rate alerts measure user impact; still keep a few cause-based alerts
   (e.g. disk 95% full) for problems that hit users suddenly.
 
