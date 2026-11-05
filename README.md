@@ -29,6 +29,7 @@ Every problem folder has the same structure:
 | 012 | [The latency dashboard said p99 was 275 ms while customers on one host waited over two seconds](problems/012-averaged-percentiles-hide-latency) |
 | 013 | [A five-minute database slowdown took the whole API down, and it stayed down after the database recovered](problems/013-liveness-probe-dependency-restart-storm) |
 | 014 | [A deploy broke coupon checkout for two days, while the error-rate dashboard looked normal](problems/014-new-error-fingerprint-after-deploy) |
+| 015 | [One database outage paged the on-call engineer 310 times in ten minutes](problems/015-alert-dedup-grouping) |
 <!-- INDEX:END -->
 
 ## Run the tests
