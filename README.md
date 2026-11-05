@@ -47,6 +47,7 @@ Every problem folder has the same structure:
 | 030 | [Checkout was down for 40 minutes during a database maintenance window, and on-call never got the page](problems/030-overbroad-maintenance-silence) |
 | 031 | [Checkout failed for an hour after a deploy, and the error-rate alert stayed green because its metrics had disappeared](problems/031-alert-no-data-treated-as-healthy) |
 | 032 | [Customers were charged twice on the night the clocks went back, and in spring the daily finance report never arrived](problems/032-dst-local-time-cron-double-run) |
+| 033 | [Every scale-out and every deploy caused a p99 latency spike and a burst of timeouts on the newest instances](problems/033-load-balancer-slow-start-cold-instances) |
 <!-- INDEX:END -->
 
 ## Run the tests
