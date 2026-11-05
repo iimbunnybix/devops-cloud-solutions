@@ -96,6 +96,22 @@ class FleetChecks(unittest.TestCase):
         self.assertEqual([(i.host, i.kind) for i in f], [("y", "EXPIRED")])
 
 
+class HostsWithoutAddresses(unittest.TestCase):
+    def test_host_with_no_addresses_is_reported_unreachable(self):
+        f = monitor({}).check({"payments-api": []})
+        self.assertEqual([(i.host, i.kind, i.severity) for i in f],
+                         [("payments-api", "UNREACHABLE", "page")])
+
+    def test_exhausted_address_generator_is_reported_unreachable(self):
+        addresses = iter([])
+        f = monitor({}).check({"payments-api": addresses})
+        self.assertEqual(kinds(f), ["UNREACHABLE"])
+
+    def test_host_with_addresses_gets_no_empty_list_finding(self):
+        f = monitor({("h", "a"): chain(60)}).check({"h": ["a"]})
+        self.assertEqual(f, [])
+
+
 class MalformedCertificates(unittest.TestCase):
     def test_garbage_not_after_is_a_finding_and_other_hosts_still_page(self):
         bad_cert = {"subject": (), "serialNumber": "7", "notAfter": "garbage"}

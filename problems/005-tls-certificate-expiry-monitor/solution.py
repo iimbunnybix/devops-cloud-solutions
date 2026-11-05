@@ -78,7 +78,9 @@ class CertMonitor:
         for host, addresses in sorted(endpoints.items()):
             served: dict[str, tuple] = {}       # address -> chain fingerprint
             worst: tuple[float, str] | None = None
+            probed = 0
             for addr in addresses:
+                probed += 1
                 try:
                     chain = self.fetch(host, addr)
                     if not chain:
@@ -103,6 +105,11 @@ class CertMonitor:
                     label = f"{addr} {role} CN={_cn(cert)}"
                     if worst is None or left < worst[0]:
                         worst = (left, label)
+            # No addresses at all (empty DNS answer, empty LB config) must not
+            # look like "no findings" - nothing was checked, so page.
+            if probed == 0:
+                findings.append(Finding(host, "page", "UNREACHABLE",
+                                        "no backend addresses to probe"))
             if worst is not None:
                 findings.extend(self._expiry_findings(host, *worst))
             if len(set(served.values())) > 1:

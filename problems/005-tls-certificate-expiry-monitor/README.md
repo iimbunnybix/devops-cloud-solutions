@@ -33,7 +33,7 @@ and evaluates the full served chain:
 | `WARNING` | ≤ 21 days left | ticket |
 | `RENEWAL_OVERDUE` | ≤ `renew_before_days − 2` (28 by default) | ticket |
 | `INCONSISTENT` | backends of one hostname serve different certs | ticket |
-| `UNREACHABLE` | probe failed or returned no chain | page |
+| `UNREACHABLE` | probe failed, returned no chain, or the host has no addresses | page |
 | `UNPARSEABLE` | a served cert has a missing or malformed `notAfter` | page |
 
 `RENEWAL_OVERDUE` is the key alert. It fires about three weeks before expiry,
