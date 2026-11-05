@@ -38,6 +38,7 @@ Every problem folder has the same structure:
 | 021 | [`df` said /var was 100% full, but `du` could only find 37 GiB of files](problems/021-deleted-open-log-files-disk-full) |
 | 022 | [Backups had shown "succeeded" every night for weeks, but the first restore found empty files](problems/022-unverified-backup-restore-check) |
 | 023 | [Error-rate alert stayed quiet while a restarted pod failed half its requests, and the traffic panel showed a negative request rate](problems/023-counter-reset-rate-spike) |
+| 024 | [Login was down for every user during a single-zone power outage, although the service ran six replicas](problems/024-zone-spread-single-az-outage) |
 <!-- INDEX:END -->
 
 ## Run the tests
