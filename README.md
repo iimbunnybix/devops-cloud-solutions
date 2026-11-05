@@ -40,6 +40,7 @@ Every problem folder has the same structure:
 | 023 | [Error-rate alert stayed quiet while a restarted pod failed half its requests, and the traffic panel showed a negative request rate](problems/023-counter-reset-rate-spike) |
 | 024 | [Login was down for every user during a single-zone power outage, although the service ran six replicas](problems/024-zone-spread-single-az-outage) |
 | 025 | [Rolling back a bad release made the outage worse: the old version crashed on every request](problems/025-rollback-unsafe-schema-migration) |
+| 026 | [On-call lowered the database connection limit during an incident, but the next deploy overloaded the database again](problems/026-config-typo-silent-default) |
 <!-- INDEX:END -->
 
 ## Run the tests
