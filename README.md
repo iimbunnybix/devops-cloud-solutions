@@ -34,6 +34,7 @@ Every problem folder has the same structure:
 | 017 | [Checkout returned 503s for 20 minutes every time a release went out during the evening peak](problems/017-rolling-deploy-capacity-batches) |
 | 018 | [Payment errors vanished from the logs during an incident while the logging bill tripled](problems/018-log-flood-per-callsite-limit) |
 | 019 | [Shoppers saw the checkout page flip between the old and new design on every reload during a "20%" rollout](problems/019-sticky-feature-flag-rollout) |
+| 020 | [Every page on the site returned 503 for 40 seconds while all web servers were actually up](problems/020-health-check-panic-threshold) |
 <!-- INDEX:END -->
 
 ## Run the tests
