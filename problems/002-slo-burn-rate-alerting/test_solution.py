@@ -60,6 +60,11 @@ class BurnRateTests(unittest.TestCase):
         first_page = next(i for i, m in enumerate(result) if "page" in m) + 1
         self.assertLessEqual(first_page, 5)
 
+    def test_burn_rate_exactly_at_threshold_pages(self):
+        # 0.6% errors = burn rate exactly 6.0 for the full 6 h / 30 min windows
+        result = self.replay([(1000, 6)] * 360)
+        self.assertIn("page", result[-1])
+
     def test_no_traffic_is_not_an_error(self):
         a = BurnRateAlerter()
         self.assertEqual([a.observe_minute(0, 0) for _ in range(100)][-1], [])

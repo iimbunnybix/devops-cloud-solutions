@@ -13,6 +13,11 @@ class Rule:
     burn_rate: float
 
 
+# 1 - 0.999 is 0.0010000000000000009 in floating point, so a burn rate exactly at a
+# threshold computes as 5.999999999999995. Compare with a small tolerance so
+# "burn rate >= 6" really fires at 6.
+BURN_RATE_TOLERANCE = 1e-9
+
 DEFAULT_RULES = (
     Rule("page", 60, 5, 14.4),
     Rule("page", 360, 30, 6.0),
@@ -56,7 +61,8 @@ class BurnRateAlerter:
         for rule in self.rules:
             if len(self._minutes) < rule.short_min:
                 continue
-            if self._burn(rule.long_min) >= rule.burn_rate and self._burn(rule.short_min) >= rule.burn_rate:
+            threshold = rule.burn_rate - BURN_RATE_TOLERANCE
+            if self._burn(rule.long_min) >= threshold and self._burn(rule.short_min) >= threshold:
                 firing.append(rule.severity)
         return sorted(set(firing))
 
