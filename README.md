@@ -28,6 +28,7 @@ Every problem folder has the same structure:
 | 011 | [Every deploy caused a burst of 502s, so the team stopped deploying during business hours](problems/011-graceful-shutdown-connection-draining) |
 | 012 | [The latency dashboard said p99 was 275 ms while customers on one host waited over two seconds](problems/012-averaged-percentiles-hide-latency) |
 | 013 | [A five-minute database slowdown took the whole API down, and it stayed down after the database recovered](problems/013-liveness-probe-dependency-restart-storm) |
+| 014 | [A deploy broke coupon checkout for two days, while the error-rate dashboard looked normal](problems/014-new-error-fingerprint-after-deploy) |
 <!-- INDEX:END -->
 
 ## Run the tests
