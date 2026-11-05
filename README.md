@@ -30,6 +30,7 @@ Every problem folder has the same structure:
 | 013 | [A five-minute database slowdown took the whole API down, and it stayed down after the database recovered](problems/013-liveness-probe-dependency-restart-storm) |
 | 014 | [A deploy broke coupon checkout for two days, while the error-rate dashboard looked normal](problems/014-new-error-fingerprint-after-deploy) |
 | 015 | [One database outage paged the on-call engineer 310 times in ten minutes](problems/015-alert-dedup-grouping) |
+| 016 | [Users on one region were logged out with "token issued in the future" while logs showed replies arriving before requests](problems/016-clock-skew-drift-detection) |
 <!-- INDEX:END -->
 
 ## Run the tests
