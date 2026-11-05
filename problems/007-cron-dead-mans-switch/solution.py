@@ -90,13 +90,28 @@ class HeartbeatMonitor:
 
     def success(self, name: str, run_id: str) -> None:
         j = self._job(name)
-        j.running.pop(run_id, None)
+        self._finish(j, run_id)
         j.last_success, j.last_failed, j.last_error = self.clock.now(), False, ""
 
     def fail(self, name: str, run_id: str, error: str = "") -> None:
         j = self._job(name)
-        j.running.pop(run_id, None)
+        self._finish(j, run_id)
         j.last_failed, j.last_error = True, error
+
+    def _finish(self, j: _JobState, run_id: str) -> None:
+        """Forget this run, plus older runs that are already past max_runtime.
+
+        A run that is OOM-killed or loses its host never sends a final ping.
+        Once a *newer* run has finished, such an old over-time run is treated
+        as dead; otherwise the job would stay STUCK forever and could never
+        page MISSED again. Older runs still within max_runtime are kept, so a
+        healthy overlapping run does not hide one that later hangs.
+        """
+        now = self.clock.now()
+        started = j.running.pop(run_id, now)
+        for other_id, other_started in list(j.running.items()):
+            if other_started < started and now - other_started > j.spec.max_runtime:
+                del j.running[other_id]
 
     # --- evaluation, run every minute by the monitor itself -------------------
     def status_of(self, name: str) -> str:

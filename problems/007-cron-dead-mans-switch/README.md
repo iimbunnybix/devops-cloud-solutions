@@ -27,7 +27,10 @@ forever on a lock all produce *no* events, so a failure-only alert stays green.
      `period + grace` (catches a job that was never scheduled correctly).
    - **STUCK**: a run started but did not finish within `max_runtime`.
      Overlapping runs are tracked by id, so one healthy run does not hide a
-     hung one.
+     hung one. A run that crashed without any final ping (OOM kill, lost
+     host) is forgotten once a newer run finishes and the old one is already
+     past `max_runtime`, so the job can return to OK and still page MISSED
+     later instead of staying STUCK forever.
    - **FAILED**: the last run reported failure, with its error message.
 3. Only **state transitions** are emitted: one `FIRING` per incident and a
    `RESOLVED` when the job succeeds again, so a 21-day gap is one page, not

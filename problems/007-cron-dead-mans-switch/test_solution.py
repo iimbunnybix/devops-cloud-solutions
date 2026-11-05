@@ -102,6 +102,23 @@ class DeadMansSwitch(unittest.TestCase):
         self.clock.advance(2 * HOUR)
         self.assertEqual(self.mon.status_of("db-backup"), STUCK)   # "a" never finished
 
+    def test_crashed_run_without_ping_is_cleared_by_a_later_success(self):
+        self.mon.start("db-backup", "r0")        # OOM-killed: never sends success or fail
+        self.clock.advance(3 * HOUR)
+        self.assertEqual(self.mon.evaluate()[0].status, STUCK)
+        self.clock.t = DAY
+        run_ok(self.mon, self.clock, "r1")
+        self.assertEqual(self.mon.status_of("db-backup"), OK)
+        self.assertEqual([(a.kind, a.status) for a in self.mon.evaluate()], [("RESOLVED", OK)])
+
+    def test_job_that_stops_after_a_crashed_run_still_pages_missed(self):
+        self.mon.start("db-backup", "r0")        # crashed run, no ping
+        self.clock.t = DAY
+        run_ok(self.mon, self.clock, "r1")
+        self.mon.evaluate()
+        self.clock.advance(2 * DAY)              # then the job stops running entirely
+        self.assertEqual([(a.kind, a.status) for a in self.mon.evaluate()], [("FIRING", MISSED)])
+
     def test_unknown_job_and_bad_spec(self):
         with self.assertRaises(KeyError):
             self.mon.start("typo-backup", "x")
