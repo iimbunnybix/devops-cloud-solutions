@@ -39,6 +39,7 @@ Every problem folder has the same structure:
 | 022 | [Backups had shown "succeeded" every night for weeks, but the first restore found empty files](problems/022-unverified-backup-restore-check) |
 | 023 | [Error-rate alert stayed quiet while a restarted pod failed half its requests, and the traffic panel showed a negative request rate](problems/023-counter-reset-rate-spike) |
 | 024 | [Login was down for every user during a single-zone power outage, although the service ran six replicas](problems/024-zone-spread-single-az-outage) |
+| 025 | [Rolling back a bad release made the outage worse: the old version crashed on every request](problems/025-rollback-unsafe-schema-migration) |
 <!-- INDEX:END -->
 
 ## Run the tests
