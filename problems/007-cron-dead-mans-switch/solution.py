@@ -77,6 +77,14 @@ class HeartbeatMonitor:
     def register(self, spec: JobSpec) -> None:
         if spec.period <= 0 or spec.grace < 0 or spec.max_runtime <= 0:
             raise ValueError("period and max_runtime must be > 0, grace >= 0")
+        existing = self.jobs.get(spec.name)
+        if existing is not None:
+            # A config reload or monitor restart re-registers every job. Keep the
+            # history (last success, running runs, current alert status) and only
+            # swap the spec; resetting it would silently clear a firing alert and
+            # restart the NEVER_RAN clock on every reload.
+            existing.spec = spec
+            return
         self.jobs[spec.name] = _JobState(spec, self.clock.now())
 
     def _job(self, name: str) -> _JobState:

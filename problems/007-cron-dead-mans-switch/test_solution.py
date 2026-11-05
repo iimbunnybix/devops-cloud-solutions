@@ -119,6 +119,27 @@ class DeadMansSwitch(unittest.TestCase):
         self.clock.advance(2 * DAY)              # then the job stops running entirely
         self.assertEqual([(a.kind, a.status) for a in self.mon.evaluate()], [("FIRING", MISSED)])
 
+    def test_re_registering_a_job_keeps_a_firing_missed_alert(self):
+        run_ok(self.mon, self.clock, "r0")
+        self.clock.advance(3 * DAY)
+        self.assertEqual(self.mon.evaluate()[0].status, MISSED)
+        self.mon.register(BACKUP)                # config reload with the same spec
+        self.assertEqual(self.mon.status_of("db-backup"), MISSED)
+        self.assertEqual(self.mon.evaluate(), [])   # no silent reset, no false RESOLVED
+
+    def test_re_registering_does_not_restart_the_never_ran_clock(self):
+        for _ in range(25):                      # hourly config sync, job never runs
+            self.clock.advance(HOUR)
+            self.mon.register(BACKUP)
+        self.clock.advance(MIN)
+        self.assertEqual(self.mon.evaluate()[0].status, NEVER_RAN)
+
+    def test_re_registering_applies_the_new_spec(self):
+        run_ok(self.mon, self.clock, "r0")
+        self.mon.register(JobSpec("db-backup", period=HOUR, grace=0, max_runtime=HOUR))
+        self.clock.advance(2 * HOUR)
+        self.assertEqual(self.mon.status_of("db-backup"), MISSED)
+
     def test_unknown_job_and_bad_spec(self):
         with self.assertRaises(KeyError):
             self.mon.start("typo-backup", "x")

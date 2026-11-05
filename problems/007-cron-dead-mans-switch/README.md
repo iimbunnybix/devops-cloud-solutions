@@ -51,6 +51,10 @@ evaluation interval), instead of never.
 - A success ping only proves the script exited 0. For backups, also verify
   the output (size, checksum, a periodic test restore), because "successful"
   empty dumps are a known failure mode.
+- Re-registering a job (config reload, monitor restart) only updates its
+  spec and keeps its history and alert status. A reload therefore never
+  clears a firing MISSED alert or restarts the NEVER_RAN clock; the cost is
+  that a renamed job starts fresh and the old name must be removed explicitly.
 - Unknown job names raise instead of being ignored, so a typo in a wrapper
   fails loudly at deploy time rather than creating an unmonitored job.
 
