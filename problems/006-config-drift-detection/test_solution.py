@@ -92,6 +92,40 @@ class RealDrift(unittest.TestCase):
         self.assertEqual(DESIRED, before)
 
 
+class PortsKeyedByPortAndProtocol(unittest.TestCase):
+    """Issue #9: 53/TCP and 53/UDP must be two separate ports."""
+
+    def doc(self, ports):
+        return {"spec": {"container": {"image": "dns:1", "ports": ports}}}
+
+    def test_deleting_tcp_half_of_dual_protocol_port_is_missing_live(self):
+        desired = self.doc([{"containerPort": 53, "protocol": "TCP"},
+                            {"containerPort": 53, "protocol": "UDP"}])
+        live = self.doc([{"containerPort": 53, "protocol": "UDP"}])
+        drifts = [d for d in detect_drift(desired, live) if "ports" in d.path]
+        self.assertEqual([(d.path, d.kind) for d in drifts],
+                         [("spec.container.ports[53/TCP]", "missing_live")])
+
+    def test_deleting_udp_half_is_missing_live_not_protocol_change(self):
+        desired = self.doc([{"containerPort": 53, "protocol": "TCP"},
+                            {"containerPort": 53, "protocol": "UDP"}])
+        live = self.doc([{"containerPort": 53, "protocol": "TCP"}])
+        drifts = [d for d in detect_drift(desired, live) if "ports" in d.path]
+        self.assertEqual([(d.path, d.kind) for d in drifts],
+                         [("spec.container.ports[53/UDP]", "missing_live")])
+
+    def test_desired_port_without_protocol_matches_live_tcp(self):
+        live = live_from(DESIRED)
+        self.assertNotIn("protocol", DESIRED["spec"]["container"]["ports"][0])
+        self.assertEqual(detect_drift(DESIRED, live), [])
+
+    def test_duplicate_port_entries_raise_instead_of_overwriting(self):
+        desired = self.doc([{"containerPort": 53, "protocol": "UDP"},
+                            {"containerPort": 53, "protocol": "UDP"}])
+        with self.assertRaises(ValueError):
+            detect_drift(desired, desired)
+
+
 class Quantities(unittest.TestCase):
     def test_parse(self):
         self.assertEqual(parse_quantity("1Gi"), parse_quantity("1024Mi"))

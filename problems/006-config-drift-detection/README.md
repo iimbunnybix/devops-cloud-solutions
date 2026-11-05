@@ -29,8 +29,11 @@ had been muted for months.
 2. **Fill server defaults** into the desired side only (`SERVER_DEFAULTS`).
    An omitted `replicas` equals live `1`, but a live `3` is still reported.
 3. **Compare set-like lists by natural key** (`SET_KEYS`): env vars by
-   `name`, ports by `containerPort`, firewall rules by whole-item identity.
-   Paths stay readable, e.g. `spec.container.env[LOG_LEVEL].value`.
+   `name`, ports by `containerPort` + `protocol` (so 53/TCP and 53/UDP stay
+   two items), firewall rules by whole-item identity. Two items with the same
+   key raise `ValueError` instead of one silently replacing the other.
+   Paths stay readable, e.g. `spec.container.env[LOG_LEVEL].value` or
+   `spec.container.ports[53/TCP]`.
 4. **Canonicalize quantities** with `parse_quantity` (`Ki/Mi/Gi`, `k/M/G`,
    millicores).
 

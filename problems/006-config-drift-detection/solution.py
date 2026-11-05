@@ -48,10 +48,11 @@ SERVER_DEFAULTS: dict[str, Any] = {
     "spec.firewall[].protocol": "tcp",
 }
 
-# Lists that are really sets: compare by this key, ignore order.
-SET_KEYS: dict[str, str | None] = {
-    "spec.container.env": "name",
-    "spec.container.ports": "containerPort",
+# Lists that are really sets: compare by these key fields, ignore order.
+# Ports need (port, protocol): DNS exposes 53/TCP and 53/UDP as two items.
+SET_KEYS: dict[str, tuple[str, ...] | None] = {
+    "spec.container.env": ("name",),
+    "spec.container.ports": ("containerPort", "protocol"),
     "spec.firewall": None,         # whole-item identity (no natural key)
 }
 
@@ -116,11 +117,31 @@ def normalize(doc: Any, *, fill_defaults: bool, path: str = "") -> Any:
             key = SET_KEYS[g]
             if key is None:
                 return {repr(_freeze(x)): x for x in items}
-            return {str(x[key]): x for x in items}
+            return _index_by_key(items, key, g)
         return items
     if path in QUANTITY_PATHS:
         return parse_quantity(doc)
     return doc
+
+
+def _index_by_key(items: list[dict], key_fields: tuple[str, ...], list_path: str) -> dict:
+    """Turn a set-like list into {"53/TCP": item}. Duplicate keys raise.
+
+    A missing key field falls back to its server default (live output may
+    omit ``protocol``), so both sides build the same key for the same item.
+    """
+    indexed: dict[str, dict] = {}
+    for item in items:
+        parts = []
+        for field in key_fields:
+            default = SERVER_DEFAULTS.get(f"{list_path}[].{field}")
+            parts.append(str(item.get(field, default)))
+        key = "/".join(parts)
+        # WHY: silently overwriting would hide drift in the dropped item.
+        if key in indexed:
+            raise ValueError(f"duplicate key {key!r} in {list_path}")
+        indexed[key] = item
+    return indexed
 
 
 def _freeze(x: Any) -> Any:
