@@ -75,8 +75,12 @@ class LogHistogram:
         return 2 * self.gamma ** key / (self.gamma + 1)
 
     def add(self, value: float, n: int = 1) -> None:
-        if value < 0 or math.isnan(value):
-            raise ValueError("latency must be a non-negative number")
+        # isfinite also rejects inf (a client's "timed out" marker), which
+        # would otherwise crash _key with OverflowError instead of ValueError.
+        if not math.isfinite(value) or value < 0:
+            raise ValueError("latency must be a finite, non-negative number")
+        if n < 1:
+            raise ValueError("n must be at least 1")
         if value <= self.min_value:
             self.zero_count += n
         else:

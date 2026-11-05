@@ -104,6 +104,16 @@ class MergeableHistogramFix(unittest.TestCase):
             h.add(0.0008)   # 0.8 ms cache hits
         self.assertAlmostEqual(h.percentile(50), 0.0008, delta=0.0008 * h.alpha)
 
+    def test_infinite_latency_is_rejected_with_value_error(self):
+        with self.assertRaises(ValueError):
+            LogHistogram().add(float("inf"))
+
+    def test_non_positive_count_is_rejected(self):
+        h = LogHistogram()
+        with self.assertRaises(ValueError):
+            h.add(0.05, n=0)
+        self.assertEqual(h.count, 0)
+
     def test_edge_cases(self):
         h = LogHistogram()
         with self.assertRaises(ValueError):
