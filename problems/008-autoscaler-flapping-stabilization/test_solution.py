@@ -76,6 +76,25 @@ class Stabilization(unittest.TestCase):
             r = s2.step(t, 0.0)
         self.assertEqual(r, 3)
 
+    def test_zero_min_replicas_is_rejected(self):
+        with self.assertRaises(ValueError):
+            ScalerConfig(min_replicas=0)
+
+    def test_min_replicas_above_max_is_rejected(self):
+        with self.assertRaises(ValueError):
+            ScalerConfig(min_replicas=10, max_replicas=5)
+
+    def test_non_positive_target_utilization_is_rejected(self):
+        with self.assertRaises(ValueError):
+            ScalerConfig(target_utilization=0.0)
+
+    def test_idle_service_keeps_one_pod_and_scales_up_when_demand_returns(self):
+        s = StabilizedScaler(ScalerConfig(min_replicas=1), replicas=4)
+        for t in range(0, 600, STEP):
+            s.step(t, 0.0)
+        self.assertEqual(s.replicas, 1)
+        self.assertEqual(s.step(600, 3.0), 5)              # ceil(3/0.6) = 5
+
     def test_raw_recommendation_validation(self):
         self.assertEqual(raw_recommendation(10, 6.0, ScalerConfig()), 10)
         with self.assertRaises(ValueError):

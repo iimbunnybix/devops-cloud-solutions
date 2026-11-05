@@ -32,7 +32,9 @@ Apply the rules the Kubernetes HorizontalPodAutoscaler uses by default:
    passed. The replica count the scaler starts with counts as a
    recommendation too, so a dip right after the autoscaler restarts is held
    for the full window as well.
-4. Clamp to `[min_replicas, max_replicas]`.
+4. Clamp to `[min_replicas, max_replicas]`. The config rejects
+   `min_replicas < 1`: CPU utilization per pod is undefined at 0 pods, so a
+   CPU-based scaler that reached 0 could never scale back up.
 
 On the same one-hour load, the stabilized scaler changes the replica count
 **once** (10 → 12), starts **2** pods, and stays between 10 and 12 pods.
@@ -46,6 +48,9 @@ On the same one-hour load, the stabilized scaler changes the replica count
 - Scale-up limits slow the response to a sudden 10× spike; pair the
   autoscaler with headroom (min replicas) or scheduled scaling for known
   peaks.
+- No scale-to-zero: idle services keep at least one pod. Scaling from zero
+  needs a signal that exists without pods (queue length, request count at
+  the load balancer), as KEDA or Knative use.
 - Prefer the built-in HPA (`behavior.scaleDown.stabilizationWindowSeconds`,
   `policies`) over a custom scaler. The code here shows why those defaults
   exist and how to unit-test scaling behaviour against a recorded load.

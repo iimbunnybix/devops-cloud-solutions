@@ -33,6 +33,19 @@ class ScalerConfig:
     min_replicas: int = 2
     max_replicas: int = 50
 
+    def __post_init__(self) -> None:
+        """Reject settings the CPU formula cannot work with.
+
+        Utilization is demand / replicas, so with 0 replicas there is no
+        utilization to measure and the scaler could never scale back up.
+        """
+        if not 1 <= self.min_replicas <= self.max_replicas:
+            raise ValueError("need 1 <= min_replicas <= max_replicas")
+        if self.target_utilization <= 0:
+            raise ValueError("target_utilization must be positive")
+        if self.tolerance < 0:
+            raise ValueError("tolerance must not be negative")
+
 
 def raw_recommendation(current: int, cpu_demand: float, cfg: ScalerConfig) -> int:
     """Replicas needed so that per-pod utilization equals the target (1 core per pod)."""
