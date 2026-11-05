@@ -35,6 +35,7 @@ Every problem folder has the same structure:
 | 018 | [Payment errors vanished from the logs during an incident while the logging bill tripled](problems/018-log-flood-per-callsite-limit) |
 | 019 | [Shoppers saw the checkout page flip between the old and new design on every reload during a "20%" rollout](problems/019-sticky-feature-flag-rollout) |
 | 020 | [Every page on the site returned 503 for 40 seconds while all web servers were actually up](problems/020-health-check-panic-threshold) |
+| 021 | [`df` said /var was 100% full, but `du` could only find 37 GiB of files](problems/021-deleted-open-log-files-disk-full) |
 <!-- INDEX:END -->
 
 ## Run the tests
