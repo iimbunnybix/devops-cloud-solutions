@@ -51,6 +51,11 @@ server) and modelled by `ShutdownPolicy` / `simulate_rolling_restart`:
    `terminationGracePeriodSeconds` (30 s default). `check_timings` flags
    settings that break any of these rules.
 
+Middleware should wrap each request in `with controller.track() as accepted:`
+(return 503 when `accepted` is false). Only accepted requests are counted
+down, and an unmatched `end_request()` raises instead of letting the
+in-flight count reach zero while real requests are still running.
+
 The tests reproduce each failure mode, check zero failures across 10 seeds,
 show that the grace period caps shutdown (a 40 s request is still killed at
 30 s), and exercise `DrainController` with a fake clock and multiple threads.

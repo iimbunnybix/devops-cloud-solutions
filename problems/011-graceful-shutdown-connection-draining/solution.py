@@ -27,8 +27,9 @@ from __future__ import annotations
 
 import random
 import threading
+from contextlib import contextmanager
 from dataclasses import dataclass, field
-from typing import Callable, List, Optional
+from typing import Callable, Iterator, List, Optional
 
 
 @dataclass(frozen=True)
@@ -141,9 +142,31 @@ class DrainController:
             return True
 
     def end_request(self) -> None:
+        """Mark one *accepted* request as finished.
+
+        Raises instead of going below zero: an unmatched call (for example a
+        middleware ``finally`` that also runs for refused requests) would
+        otherwise make shutdown think draining is done while real requests run.
+        """
         with self._cond:
+            if self._in_flight <= 0:
+                raise RuntimeError("end_request() without a matching accepted begin_request()")
             self._in_flight -= 1
             self._cond.notify_all()
+
+    @contextmanager
+    def track(self) -> Iterator[bool]:
+        """Pair begin/end safely: yields whether the request was accepted.
+
+        Only an accepted request is counted down at the end, so refused
+        requests can never disturb the in-flight count.
+        """
+        accepted = self.begin_request()
+        try:
+            yield accepted
+        finally:
+            if accepted:
+                self.end_request()
 
     @property
     def in_flight(self) -> int:
@@ -159,7 +182,7 @@ class DrainController:
             self.accepting = False
         self.log.append("stopped-accepting")
         deadline = self.now() + self.policy.drain_timeout
-        while self.in_flight and self.now() < deadline:
+        while self.in_flight > 0 and self.now() < deadline:
             self.sleep(min(poll, deadline - self.now()))
         left = self.in_flight
         self.log.append(f"exit in_flight={left}")

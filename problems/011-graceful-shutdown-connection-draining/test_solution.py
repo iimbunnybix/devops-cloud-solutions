@@ -101,6 +101,47 @@ class DrainControllerTest(unittest.TestCase):
         dc.shutdown()
         self.assertTrue(accepted[0])               # still accepting at end of pre-stop sleep
 
+    def test_refused_request_in_track_does_not_change_the_count(self):
+        ft = FakeTime()
+        dc = DrainController(GOOD, ft.sleep, ft.now)
+        self.assertTrue(dc.begin_request())        # one real request still running
+        dc.accepting = False
+        with dc.track() as accepted:
+            self.assertFalse(accepted)
+        self.assertEqual(dc.in_flight, 1)
+
+    def test_unmatched_end_request_raises(self):
+        ft = FakeTime()
+        dc = DrainController(GOOD, ft.sleep, ft.now)
+        dc.begin_request()
+        dc.end_request()
+        with self.assertRaises(RuntimeError):
+            dc.end_request()
+        self.assertEqual(dc.in_flight, 0)
+
+    def test_shutdown_waits_for_real_request_after_a_refused_one(self):
+        ft = FakeTime()
+        dc = DrainController(ShutdownPolicy(0, 20, 30), ft.sleep, ft.now)
+        dc.begin_request()                          # real 8 s request
+
+        def finish_real_request(t):
+            if t >= 8.0 and dc.in_flight == 1:
+                dc.end_request()
+        ft.on_sleep.append(finish_real_request)
+        dc.accepting = False
+        with dc.track():
+            pass                                    # refused request
+        self.assertEqual(dc.shutdown(), 0)
+        self.assertGreaterEqual(ft.t, 8.0)
+
+    def test_track_counts_accepted_request_until_block_ends(self):
+        ft = FakeTime()
+        dc = DrainController(GOOD, ft.sleep, ft.now)
+        with dc.track() as accepted:
+            self.assertTrue(accepted)
+            self.assertEqual(dc.in_flight, 1)
+        self.assertEqual(dc.in_flight, 0)
+
     def test_thread_safe_counting(self):
         ft = FakeTime()
         dc = DrainController(GOOD, ft.sleep, ft.now)
