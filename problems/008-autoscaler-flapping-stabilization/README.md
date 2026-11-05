@@ -29,7 +29,9 @@ Apply the rules the Kubernetes HorizontalPodAutoscaler uses by default:
 3. **Scale down slowly**: use the **highest** recommendation of the last
    **300 s** (the downscale stabilization window). A dip shorter than 5 minutes
    never removes pods; sustained low demand shrinks once the window has
-   passed.
+   passed. The replica count the scaler starts with counts as a
+   recommendation too, so a dip right after the autoscaler restarts is held
+   for the full window as well.
 4. Clamp to `[min_replicas, max_replicas]`.
 
 On the same one-hour load, the stabilized scaler changes the replica count

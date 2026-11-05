@@ -68,6 +68,11 @@ class StabilizedScaler:
             rec = math.ceil(current * ratio)
         rec = min(cfg.max_replicas, max(cfg.min_replicas, rec))
 
+        if not self._history:
+            # First evaluation after (re)start: count the replicas we started
+            # with as a recommendation, so a dip right after a restart is held
+            # for the full window like any other dip.
+            self._history.append((now, current))
         self._history.append((now, rec))
         while self._history and self._history[0][0] <= now - cfg.scale_down_window_s:
             self._history.popleft()

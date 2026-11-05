@@ -51,6 +51,17 @@ class Stabilization(unittest.TestCase):
         seen = [s.step(i * STEP, d) for i, d in enumerate(demand)]
         self.assertEqual(set(seen), {10})
 
+    def test_dip_on_first_tick_after_start_does_not_scale_down(self):
+        s = StabilizedScaler(ScalerConfig(), replicas=10)
+        seen = [s.step(t, d) for t, d in [(0, 3.0), (15, 6.0), (30, 6.0)]]
+        self.assertEqual(seen, [10, 10, 10])
+
+    def test_low_demand_from_start_shrinks_after_full_window(self):
+        s = StabilizedScaler(ScalerConfig(), replicas=10)
+        for t in range(0, 300, STEP):
+            self.assertEqual(s.step(t, 3.0), 10)
+        self.assertEqual(s.step(300, 3.0), 5)
+
     def test_tolerance_band(self):
         s = StabilizedScaler(ScalerConfig(), replicas=10)
         self.assertEqual(s.step(0, 6.5), 10)               # ratio 1.083: inside ±10%
