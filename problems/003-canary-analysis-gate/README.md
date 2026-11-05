@@ -32,7 +32,9 @@ same time** (same load, same dependencies, same time of day) and returns
   increase, because with millions of requests even a +10% change is
   "significant" (tested: p < 0.01 but still promoted).
 - **Latency**: canary p99 must be within **1.2×** baseline p99 (needs at least
-  500 samples per side). A slow tail that leaves errors untouched still
+  500 samples per side). If latency is being sampled but either side has
+  fewer than 500 samples yet, the verdict is `CONTINUE`: missing latency
+  evidence must not count as "latency is fine" (tested). A slow tail that leaves errors untouched still
   triggers rollback (tested: 352 ms vs 264 ms).
 - **Minimum traffic**: below 2,000 requests per cohort the verdict is
   `CONTINUE`, so a few early errors can't decide the rollout either way.

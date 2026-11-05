@@ -116,11 +116,16 @@ class CanaryAnalyzer:
         if p < self.alpha and rel >= self.min_relative_increase:
             reasons.append(f"error rate {canary.error_rate:.3%} vs baseline "
                            f"{base.error_rate:.3%} (p={p:.2g})")
-        if (len(base.latencies_ms) >= self.min_latency_samples
-                and len(canary.latencies_ms) >= self.min_latency_samples):
+        latency_collected = bool(base.latencies_ms) or bool(canary.latencies_ms)
+        latency_ready = (len(base.latencies_ms) >= self.min_latency_samples
+                         and len(canary.latencies_ms) >= self.min_latency_samples)
+        if latency_ready:
             b, c = p99(base.latencies_ms), p99(canary.latencies_ms)
             if c > b * self.max_p99_ratio:
                 reasons.append(f"p99 {c:.0f}ms vs baseline {b:.0f}ms")
         if reasons:
             return CanaryResult(Verdict.ROLLBACK, reasons, p)
+        # Latency is being sampled but not enough yet: "unknown" is not "fine".
+        if latency_collected and not latency_ready:
+            return CanaryResult(Verdict.CONTINUE, ["not enough latency samples yet"], p)
         return CanaryResult(Verdict.PROMOTE, ["canary within tolerance"], p)

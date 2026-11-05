@@ -79,6 +79,18 @@ class CanaryTests(unittest.TestCase):
         self.assertEqual(r.verdict, Verdict.PROMOTE)
         self.assertAlmostEqual(r.p_value, 5_000 / 55_000, places=6)
 
+    def test_too_few_canary_latency_samples_waits_instead_of_promoting(self):
+        base = Cohort(50_000, 100, [80.0] * 600)
+        canary = Cohort(5_000, 10, [800.0] * 100)    # 10x slower, only 100 samples
+        r = self.a.analyze(base, canary)
+        self.assertEqual(r.verdict, Verdict.CONTINUE)
+        self.assertIn("not enough latency samples yet", r.reasons)
+
+    def test_error_rollback_wins_even_when_latency_samples_are_short(self):
+        base = Cohort(50_000, 0, [80.0] * 600)
+        canary = Cohort(5_000, 30, [80.0] * 100)
+        self.assertEqual(self.a.analyze(base, canary).verdict, Verdict.ROLLBACK)
+
     def test_binomial_helper_mean(self):
         rng = random.Random(0)
         mean = sum(binomial(10_000, 0.01, rng) for _ in range(500)) / 500
