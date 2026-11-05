@@ -27,6 +27,7 @@ Every problem folder has the same structure:
 | 010 | [The storage bill climbed every month after CI moved to per-PR environments, and the first cleanup script deleted a production volume](problems/010-orphaned-cloud-resources-cost) |
 | 011 | [Every deploy caused a burst of 502s, so the team stopped deploying during business hours](problems/011-graceful-shutdown-connection-draining) |
 | 012 | [The latency dashboard said p99 was 275 ms while customers on one host waited over two seconds](problems/012-averaged-percentiles-hide-latency) |
+| 013 | [A five-minute database slowdown took the whole API down, and it stayed down after the database recovered](problems/013-liveness-probe-dependency-restart-storm) |
 <!-- INDEX:END -->
 
 ## Run the tests
