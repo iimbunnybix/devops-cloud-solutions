@@ -85,7 +85,9 @@ class ForeverResolver:
 class _Entry:
     ip: str
     expires_at: float
-    fetched_at: float
+    # Time of the last DNS query for this name, successful or not. The rate
+    # limit uses this so failed lookups are throttled too (no storm while DNS is down).
+    last_attempt_at: float
 
 
 class TtlResolver:
@@ -116,8 +118,10 @@ class TtlResolver:
         entry = self._cache.get(name)
         if entry and now < entry.expires_at:
             return entry.ip
-        if entry and now - entry.fetched_at < self.min_refresh_interval:
-            return entry.ip  # just refreshed; don't hammer DNS
+        if entry and now - entry.last_attempt_at < self.min_refresh_interval:
+            return entry.ip  # just tried DNS (ok or failed); don't hammer it
+        if entry:
+            entry.last_attempt_at = now
         try:
             ip, ttl = self.dns.query(name)
         except DnsError:

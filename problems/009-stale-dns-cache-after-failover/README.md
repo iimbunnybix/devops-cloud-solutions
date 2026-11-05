@@ -39,6 +39,9 @@ the old primary dies), the forever-cache fails **all 600 attempts** in the
    (one per second during the lag, then one per TTL).
 4. **Serve stale on DNS failure** for up to 5 minutes (`stale_grace`), so a
    resolver outage does not take down a service whose database is fine.
+   Failed lookups count toward the rate limit too, so during a DNS outage the
+   client retries at most once per second per name (1,000 requests in a
+   second -> 1 query) instead of once per request.
 
 ## Trade-offs
 - Shorter TTLs mean faster failover but more DNS load and more exposure to

@@ -83,6 +83,19 @@ class TtlAwareResolver(unittest.TestCase):
         with self.assertRaises(DnsError):           # grace exhausted
             r.get(NAME)
 
+    def test_dns_outage_does_not_cause_a_query_storm(self):
+        clock, dns = FakeClock(), FakeDns()
+        dns.set(NAME, OLD, TTL)
+        r = TtlResolver(dns, clock, min_refresh_interval=1.0)
+        r.get(NAME)
+        dns.down = True
+        clock.advance(TTL + 1)
+        queries_before = dns.queries
+        for _ in range(1000):                       # 1,000 requests within one second
+            self.assertEqual(r.get(NAME), OLD)      # stale answer every time
+            clock.advance(0.0009)
+        self.assertEqual(dns.queries - queries_before, 1)
+
     def test_unknown_name_raises(self):
         with self.assertRaises(DnsError):
             TtlResolver(FakeDns(), FakeClock()).get("nope.internal")
