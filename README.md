@@ -44,6 +44,7 @@ Every problem folder has the same structure:
 | 027 | [Accounting received the same invoices twice whenever the database was slow, because the 5-minute export started on top of itself](problems/027-overlapping-scheduled-job-runs) |
 | 028 | [Checkout failed with "password authentication failed" for 20 minutes during a routine database password rotation](problems/028-db-password-rotation-outage) |
 | 029 | [Web servers failed every login with "No space left on device" while the disk dashboard showed 39% used](problems/029-inode-exhaustion-disk-alert) |
+| 030 | [Checkout was down for 40 minutes during a database maintenance window, and on-call never got the page](problems/030-overbroad-maintenance-silence) |
 <!-- INDEX:END -->
 
 ## Run the tests
