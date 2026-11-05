@@ -1,4 +1,5 @@
 import random
+import threading
 import unittest
 
 from solution import (CircuitBreaker, CircuitOpenError, RetryableError, backoff_delays,
@@ -83,6 +84,59 @@ class CircuitBreakerTests(unittest.TestCase):
         with self.assertRaises(RetryableError):
             cb.call(Flaky(5))
         self.assertEqual(cb.state, "OPEN")
+
+
+class HalfOpenSingleTrialTests(unittest.TestCase):
+    """After the cool-down only ONE trial request may reach the recovering dependency."""
+
+    def open_breaker(self, now: list[float]) -> CircuitBreaker:
+        cb = CircuitBreaker(failure_threshold=1, reset_after_s=5, clock=lambda: now[0])
+        with self.assertRaises(RetryableError):
+            cb.call(Flaky(5))
+        now[0] = 6                                        # cool-down is over
+        return cb
+
+    def test_only_one_concurrent_caller_reaches_dependency_in_half_open(self):
+        now = [0.0]
+        cb = self.open_breaker(now)
+        release = threading.Event()
+        trial_started = threading.Event()
+        reached = []
+        rejected = []
+
+        def slow_dependency() -> str:
+            reached.append(1)
+            trial_started.set()
+            release.wait(timeout=5)
+            return "ok"
+
+        def caller() -> None:
+            try:
+                cb.call(slow_dependency)
+            except CircuitOpenError:
+                rejected.append(1)
+
+        first = threading.Thread(target=caller)
+        first.start()
+        trial_started.wait(timeout=5)
+        others = [threading.Thread(target=caller) for _ in range(4)]
+        for thread in others:
+            thread.start()
+        for thread in others:
+            thread.join(timeout=5)
+        release.set()
+        first.join(timeout=5)
+        self.assertEqual(len(reached), 1)
+        self.assertEqual(len(rejected), 4)
+        self.assertEqual(cb.state, "CLOSED")
+
+    def test_non_retryable_error_in_trial_does_not_leave_breaker_stuck(self):
+        now = [0.0]
+        cb = self.open_breaker(now)
+        with self.assertRaises(ValueError):
+            cb.call(Flaky(1, exc=ValueError))
+        self.assertEqual(cb.call(lambda: "ok"), "ok")
+        self.assertEqual(cb.state, "CLOSED")
 
 
 if __name__ == "__main__":

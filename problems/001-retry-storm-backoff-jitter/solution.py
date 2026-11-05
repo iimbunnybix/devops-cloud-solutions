@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import random
+import threading
 import time
 from typing import Callable, TypeVar
 
@@ -55,21 +56,60 @@ class CircuitBreaker:
         self.state = "CLOSED"
         self._failures = 0
         self._opened_at = 0.0
+        # Guards state changes so concurrent callers see one consistent breaker.
+        self._lock = threading.Lock()
+        self._trial_in_flight = False
 
     def call(self, fn: Callable[[], T]) -> T:
-        if self.state == "OPEN":
-            if self._clock() - self._opened_at < self.reset_after_s:
-                raise CircuitOpenError("dependency unavailable, failing fast")
-            self.state = "HALF_OPEN"
+        self._admit()
         try:
             result = fn()
         except RetryableError:
+            self._record_retryable_failure()
+            raise
+        except Exception:
+            # A non-retryable error (e.g. a 400) means the dependency answered,
+            # so it is up; never leave the breaker stuck in HALF_OPEN.
+            self._finish_trial_without_retryable_failure()
+            raise
+        self._record_success()
+        return result
+
+    def _admit(self) -> None:
+        """Decide under the lock whether this call may reach the dependency.
+
+        After the cool-down exactly one caller becomes the trial request;
+        everyone else keeps failing fast until that trial finishes.
+        """
+        with self._lock:
+            if self.state == "HALF_OPEN" and self._trial_in_flight:
+                raise CircuitOpenError("trial request in flight, failing fast")
+            if self.state == "OPEN":
+                if self._clock() - self._opened_at < self.reset_after_s:
+                    raise CircuitOpenError("dependency unavailable, failing fast")
+                self.state = "HALF_OPEN"
+                self._trial_in_flight = True
+
+    def _record_retryable_failure(self) -> None:
+        """Count a failure; a failed trial or too many failures (re)open the breaker."""
+        with self._lock:
             self._failures += 1
             if self.state == "HALF_OPEN" or self._failures >= self.failure_threshold:
                 self.state, self._opened_at = "OPEN", self._clock()
-            raise
-        self.state, self._failures = "CLOSED", 0
-        return result
+            self._trial_in_flight = False
+
+    def _finish_trial_without_retryable_failure(self) -> None:
+        """Close a HALF_OPEN breaker; in CLOSED leave the failure count alone."""
+        with self._lock:
+            if self.state == "HALF_OPEN":
+                self.state, self._failures = "CLOSED", 0
+            self._trial_in_flight = False
+
+    def _record_success(self) -> None:
+        """The dependency answered: close the breaker and reset counters."""
+        with self._lock:
+            self.state, self._failures = "CLOSED", 0
+            self._trial_in_flight = False
 
 
 def simulate_peak_load(n_clients: int, jitter: bool, seed: int = 0, recovery_t: float = 6.0) -> int:
