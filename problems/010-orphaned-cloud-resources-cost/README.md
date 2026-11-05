@@ -38,7 +38,7 @@ volume detached 5 minutes earlier, deletes it.
    converted to UTC before comparing, so one such tag cannot crash the run.
 3. **Report before acting:** findings sorted by monthly cost and grouped by
    `team` tag, so each owner sees their own bill.
-4. **Two-phase deletion:** `mark` tags each candidate with the date;
+4. **Two-phase deletion:** `mark` tags each candidate with the time it was marked;
    `sweep` deletes only resources marked ≥ 7 days ago **and still orphaned
    now**. Re-attaching a volume during the grace period spares it and removes
    the mark. `dry_run` is the default.

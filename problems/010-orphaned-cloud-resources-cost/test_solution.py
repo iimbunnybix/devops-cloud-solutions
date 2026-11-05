@@ -106,6 +106,16 @@ class SafeCleanup(unittest.TestCase):
         self.assertTrue(all((NOW - r.detached_at).days < 14 for r in leftover))
         self.assertTrue(all(rid.startswith(("vol-ci", "snap-ci", "ip-ci")) for rid in deleted))
 
+    def test_sweep_just_before_grace_period_ends_deletes_nothing(self):
+        late_evening = datetime(2026, 10, 1, 23, 59)
+        vol = Resource("vol-x", "volume", late_evening - timedelta(days=60), size_gb=100,
+                       detached_at=late_evening - timedelta(days=30))
+        job = CleanupJob(Inventory([vol]), Policy(grace_days=1), dry_run=False)
+        job.mark(late_evening)
+        self.assertEqual(job.sweep(late_evening + timedelta(minutes=1)), [])
+        self.assertEqual(job.sweep(late_evening + timedelta(days=1, minutes=-1)), [])
+        self.assertEqual(job.sweep(late_evening + timedelta(days=1)), ["vol-x"])
+
     def test_snapshots_follow_in_next_cycle(self):
         inv = Inventory(ci_leak_fleet())
         job = CleanupJob(inv, dry_run=False)

@@ -163,7 +163,9 @@ class CleanupJob:
     def mark(self, now: datetime) -> list[Finding]:
         findings = find_orphans(self.inv, now, self.policy)
         for f in findings:
-            f.resource.tags.setdefault(MARK_TAG, now.date().isoformat())
+            # Store the full timestamp, not just the date: a date-only tag is read back
+            # as midnight, which silently shortens the grace period by up to a day.
+            f.resource.tags.setdefault(MARK_TAG, now.isoformat(timespec="seconds"))
         # unmark anything that is no longer an orphan (re-attached, exempted)
         orphan_ids = {f.resource.id for f in findings}
         for r in self.inv.all():
@@ -179,7 +181,8 @@ class CleanupJob:
             mark = r.tags.get(MARK_TAG)
             if not mark or r.id not in still_orphaned:
                 continue
-            if now - datetime.fromisoformat(mark) >= timedelta(days=self.policy.grace_days):
+            marked_at = _as_naive_utc(datetime.fromisoformat(mark))
+            if _as_naive_utc(now) - marked_at >= timedelta(days=self.policy.grace_days):
                 due.append(r.id)
         if not self.dry_run:
             for rid in due:
