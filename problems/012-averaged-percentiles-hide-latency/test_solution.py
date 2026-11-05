@@ -98,6 +98,12 @@ class MergeableHistogramFix(unittest.TestCase):
         h = histograms(fleet())[7]
         self.assertLess(len(h.counts), 60)   # 10,000 samples -> a few dozen buckets
 
+    def test_sub_millisecond_latencies_are_reported_within_alpha(self):
+        h = LogHistogram()
+        for _ in range(100):
+            h.add(0.0008)   # 0.8 ms cache hits
+        self.assertAlmostEqual(h.percentile(50), 0.0008, delta=0.0008 * h.alpha)
+
     def test_edge_cases(self):
         h = LogHistogram()
         with self.assertRaises(ValueError):

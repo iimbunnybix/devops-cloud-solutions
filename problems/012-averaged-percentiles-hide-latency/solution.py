@@ -39,16 +39,24 @@ def weighted_average_of_percentiles(per_host: Dict[str, Sequence[float]], q: flo
     return sum(exact_percentile(v, q) * len(v) for v in per_host.values()) / total
 
 
+# Smallest latency (seconds) that gets its own log bucket; anything at or
+# below it is reported as 0. One microsecond is far below any real request.
+DEFAULT_MIN_LATENCY_SECONDS = 1e-6
+
+
 class LogHistogram:
     """Latency histogram with logarithmic buckets and bounded relative error.
 
     Bucket ``i`` covers ``(gamma**(i-1), gamma**i]`` where
     ``gamma = (1 + alpha) / (1 - alpha)``. Reporting a bucket's midpoint
     ``2 * gamma**i / (gamma + 1)`` is within ``alpha`` (relative) of every value
-    in the bucket. Values at or below ``min_value`` share one bucket.
+    in the bucket. Values at or below ``min_value`` share one bucket that is
+    reported as 0. Latencies are in seconds, so the default floor is 1 µs:
+    a 1 ms floor would report every sub-millisecond request (cache hits,
+    health checks) as 0 ms, a 100% error.
     """
 
-    def __init__(self, relative_accuracy: float = 0.01, min_value: float = 1e-3) -> None:
+    def __init__(self, relative_accuracy: float = 0.01, min_value: float = DEFAULT_MIN_LATENCY_SECONDS) -> None:
         if not 0 < relative_accuracy < 1:
             raise ValueError("relative_accuracy must be in (0, 1)")
         self.alpha = relative_accuracy

@@ -36,7 +36,8 @@ Ship **mergeable histograms**, not percentiles. `LogHistogram` in
 - counts requests in logarithmic buckets: bucket *i* covers
   `(γ^(i-1), γ^i]` with `γ = (1+α)/(1-α)`. Reporting the bucket's midpoint is
   within a relative error `α` (1% by default) of any value in it, whatever the
-  latency range;
+  latency range above a 1 µs floor (values at or below the floor are reported
+  as 0, so sub-millisecond cache hits are still measured accurately);
 - **merges** by adding counts per bucket, so hosts, minutes and regions can be
   combined in any order and the result equals one histogram of all requests
   (tested);
