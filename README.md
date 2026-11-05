@@ -50,6 +50,7 @@ Every problem folder has the same structure:
 | 033 | [Every scale-out and every deploy caused a p99 latency spike and a burst of timeouts on the newest instances](problems/033-load-balancer-slow-start-cold-instances) |
 | 034 | [Half the fleet ran a different build of the same release, and rolling back did not bring the old code back](problems/034-mutable-image-tag-mixed-fleet) |
 | 035 | [A "rename only" infrastructure pull request deleted the production orders database](problems/035-iac-rename-destroys-database) |
+| 036 | [The API slowed to a crawl every afternoon while its CPU graph showed only 30%](problems/036-burstable-cpu-credit-exhaustion) |
 <!-- INDEX:END -->
 
 ## Run the tests
