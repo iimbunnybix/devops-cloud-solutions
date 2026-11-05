@@ -73,6 +73,12 @@ class CanaryTests(unittest.TestCase):
         self.assertEqual(self.a.analyze(Cohort(50_000, 0), Cohort(5_000, 30)).verdict,
                          Verdict.ROLLBACK)
 
+    def test_single_canary_error_with_zero_baseline_errors_is_not_rollback(self):
+        # 1 error in 55k requests; canary has 5k/55k of traffic, so p ~ 0.091.
+        r = self.a.analyze(Cohort(50_000, 0), Cohort(5_000, 1))
+        self.assertEqual(r.verdict, Verdict.PROMOTE)
+        self.assertAlmostEqual(r.p_value, 5_000 / 55_000, places=6)
+
     def test_binomial_helper_mean(self):
         rng = random.Random(0)
         mean = sum(binomial(10_000, 0.01, rng) for _ in range(500)) / 500

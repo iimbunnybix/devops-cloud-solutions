@@ -21,8 +21,14 @@ a canary at 0.87% errors is promoted.)
 same time** (same load, same dependencies, same time of day) and returns
 `PROMOTE`, `ROLLBACK` or `CONTINUE`:
 
-- **Error rate**: one-sided two-proportion z-test, *"is the canary worse?"*,
-  at `alpha = 0.01`. A rollback also requires at least a **+25% relative**
+- **Error rate**: one-sided test, *"is the canary worse?"*, at
+  `alpha = 0.01`. With up to 1,000 total errors it uses an **exact binomial
+  test** (given k errors in total, how likely is it that the canary got this
+  many of them by chance, given its traffic share?). The z-test's normal
+  approximation is badly wrong on tiny counts: one canary error against a
+  zero-error baseline gave p ≈ 0.0008 and a rollback, while the exact
+  p-value is 5,000/55,000 ≈ 0.091 (tested). Above 1,000 errors the z-test is
+  used. A rollback also requires at least a **+25% relative**
   increase, because with millions of requests even a +10% change is
   "significant" (tested: p < 0.01 but still promoted).
 - **Latency**: canary p99 must be within **1.2×** baseline p99 (needs at least
