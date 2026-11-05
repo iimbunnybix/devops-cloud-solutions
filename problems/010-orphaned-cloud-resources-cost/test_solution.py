@@ -72,6 +72,28 @@ class SafeCleanup(unittest.TestCase):
         ids = sorted(f.resource.id for f in find_orphans(inv, NOW))
         self.assertEqual(ids, ["vol-bad-tag", "vol-expired"])
 
+    def test_expires_tag_with_timezone_offset_is_compared_not_crashing(self):
+        old = NOW - timedelta(days=100)
+        inv = Inventory([
+            Resource("vol-future-offset", "volume", old, size_gb=10,
+                     tags={"expires": "2027-01-01T00:00:00+00:00"}),
+            Resource("vol-future-z", "volume", old, size_gb=10,
+                     tags={"expires": "2027-01-01T00:00:00Z"}),
+            Resource("vol-past-offset", "volume", old, size_gb=10,
+                     tags={"expires": "2026-09-01T00:00:00+02:00"}),
+            Resource("vol-prod", "volume", NOW - timedelta(days=400), size_gb=500,
+                     attached_to="i-1", tags={"expires": "2027-01-01T00:00:00+00:00"}),
+        ])
+        ids = sorted(f.resource.id for f in find_orphans(inv, NOW))
+        self.assertEqual(ids, ["vol-past-offset"])
+
+    def test_offset_is_converted_to_utc_before_comparing(self):
+        # 10:30+02:00 is 08:30 UTC, i.e. already past NOW (09:00 UTC).
+        old = NOW - timedelta(days=100)
+        inv = Inventory([Resource("vol-a", "volume", old, size_gb=10,
+                                  tags={"expires": "2026-10-01T10:30:00+02:00"})])
+        self.assertEqual([f.resource.id for f in find_orphans(inv, NOW)], ["vol-a"])
+
     def test_two_phase_mark_then_sweep(self):
         inv = Inventory(ci_leak_fleet())
         job = CleanupJob(inv, Policy(grace_days=7), dry_run=False)

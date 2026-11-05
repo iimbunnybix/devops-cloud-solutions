@@ -34,6 +34,8 @@ volume detached 5 minutes earlier, deletes it.
    that are ≥ 90 days old.
 2. **Exemptions:** `keep=true`, or an `expires` tag in the future. A malformed
    `expires` value is *not* an exemption, so typos cannot hide waste forever.
+   Dates with a timezone offset (`2027-01-01T00:00:00+02:00`, `...Z`) are
+   converted to UTC before comparing, so one such tag cannot crash the run.
 3. **Report before acting:** findings sorted by monthly cost and grouped by
    `team` tag, so each owner sees their own bill.
 4. **Two-phase deletion:** `mark` tags each candidate with the date;

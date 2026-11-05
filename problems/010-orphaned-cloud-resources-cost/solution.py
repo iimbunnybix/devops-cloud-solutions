@@ -20,7 +20,7 @@ provider's price list.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Optional
 
 # Illustrative monthly rates used by the simulation and the report.
@@ -92,15 +92,26 @@ def naive_cleanup(inv: Inventory) -> list[str]:
     return victims
 
 
+def _as_naive_utc(moment: datetime) -> datetime:
+    """Return ``moment`` as a naive UTC datetime.
+
+    Tags may carry an offset (``...+02:00`` or ``...Z``) while ``now`` is naive
+    UTC; Python refuses to compare the two, so convert aware values to UTC first.
+    """
+    if moment.tzinfo is None:
+        return moment
+    return moment.astimezone(timezone.utc).replace(tzinfo=None)
+
+
 def _exempt(r: Resource, now: datetime) -> Optional[str]:
     if str(r.tags.get("keep", "")).lower() == "true":
         return "tagged keep=true"
     expires = r.tags.get("expires")
     if expires:
         try:
-            if datetime.fromisoformat(expires) > now:
+            if _as_naive_utc(datetime.fromisoformat(expires)) > _as_naive_utc(now):
                 return f"expires {expires}"
-        except ValueError:
+        except (ValueError, TypeError):
             pass  # malformed tag: do not treat as an exemption
     return None
 
