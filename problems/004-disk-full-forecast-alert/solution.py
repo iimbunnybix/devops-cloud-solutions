@@ -11,6 +11,11 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Sequence
 
+# A post-drop segment shorter than this is too short to trust on its own: a
+# job that writes temp files and then deletes them would restart the fit every
+# cycle and only ever see the steep "write" half.
+MIN_SPAN_AFTER_DROP_S = 2 * 3600
+
 
 @dataclass(frozen=True)
 class Sample:
@@ -74,7 +79,11 @@ def forecast(samples: Sequence[Sample], capacity: float, window_s: float = 6 * 3
     samples = sorted(samples, key=lambda s: s.ts)
     now = samples[-1].ts
     recent = [s for s in samples if s.ts >= now - window_s]
-    recent = list(_since_last_drop(recent, capacity, drop_fraction))
+    after_drop = list(_since_last_drop(recent, capacity, drop_fraction))
+    # Only reset the trend when the new regime has lasted long enough to fit;
+    # otherwise the whole window (e.g. a full sawtooth) gives the real trend.
+    if after_drop[-1].ts - after_drop[0].ts >= MIN_SPAN_AFTER_DROP_S:
+        recent = after_drop
     used = samples[-1].used_bytes / capacity
     if len(recent) < min_samples:
         return Forecast(None, 0.0, used, len(recent))

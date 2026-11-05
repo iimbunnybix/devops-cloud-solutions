@@ -25,6 +25,9 @@ Alert on **predicted time-to-full**:
   "now vs 1 h ago" rate is easily skewed by one burst.
 - **Reset the trend after big drops** (> 5% of capacity, e.g. log rotation or
   a cleanup job), so growth before and after the drop isn't averaged together.
+  The reset only applies once the post-drop segment covers at least 2 hours;
+  a job that writes temp files and deletes them every hour would otherwise
+  restart the fit each cycle and only ever see the steep "write" half.
 - Project from the fitted current value to capacity → `seconds_to_full`.
 - **Page** if full within 4 hours (or already ≥ 98%), **ticket** if full
   within 4 days, otherwise stay quiet. Flat or shrinking usage never alerts.
@@ -39,6 +42,7 @@ Results from the tests (100 GB volume, 5-minute samples):
 | 60% → 63% over 6 h at 0.5 GB/h | silent | ticket: full in 3.1 d |
 | 5 GB/h with ±0.5 GB noise | silent | page, estimate within ±0.5 h |
 | Rotation drop, then 6 GB/h | — | growth estimated at 6.0 GB/h |
+| Hourly job writes then deletes 10 GB at 70% | silent | never pages after the first hour; silent once 4 h of history exist |
 
 This is the same idea as Prometheus's
 `predict_linear(node_filesystem_avail_bytes[6h], 4*3600) < 0`, with the
@@ -49,7 +53,9 @@ drop-reset and two severities added.
   logging); a shorter window reacts faster but is noisier. Running a short
   and a long window together is a common compromise.
 - Bursty workloads (nightly batch writes) can look like fast growth for an
-  hour; the 6-hour window and the ticket tier keep that from paging.
+  hour; the 6-hour window, the 2-hour minimum before a drop resets the
+  trend, and the ticket tier keep that from paging. With less than a few
+  cycles of history a sawtooth can still open a ticket.
 - Keep a hard-limit page (98%) as a backstop; forecasting needs history,
   and a new volume or a sudden huge write won't have any.
 - Inode exhaustion fills a disk without using bytes; forecast inodes the

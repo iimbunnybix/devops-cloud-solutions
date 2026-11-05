@@ -18,6 +18,17 @@ def series(start_frac, gb_per_hour, hours=6, step_min=5, noise_gb=0.0, seed=0, t
     return out
 
 
+def hourly_temp_file_sawtooth(hours=6, step_min=5):
+    """Steady 70% disk; each hour a job writes 10 GB over 30 min, then deletes it."""
+    out = []
+    for i in range(int(hours * 60 / step_min) + 1):
+        t = i * step_min * MIN
+        minute_of_hour = (t // MIN) % 60
+        temp_bytes = 10 * GB * minute_of_hour / 30 if minute_of_hour < 30 else 0
+        out.append(Sample(t, 0.70 * CAP + temp_bytes))
+    return out
+
+
 class DiskForecastTests(unittest.TestCase):
     def test_static_threshold_pages_on_stable_full_disk(self):
         s = series(0.91, 0.0, noise_gb=0.05, seed=1)
@@ -47,6 +58,17 @@ class DiskForecastTests(unittest.TestCase):
         after = series(0.40, 6.0, hours=2, seed=6, t0=before[-1].ts + 5 * MIN)
         f = forecast(before + after, CAP)
         self.assertAlmostEqual(f.growth_bytes_per_s * 3600 / GB, 6.0, delta=0.01)
+
+    def test_hourly_temp_file_job_never_pages_after_first_hour(self):
+        samples = hourly_temp_file_sawtooth()
+        for end in range(13, len(samples) + 1):           # from 60 minutes of history
+            alert = evaluate(samples[:end], CAP)
+            self.assertFalse(alert and alert.severity == "page", (end, alert))
+
+    def test_hourly_temp_file_job_is_silent_once_window_has_history(self):
+        samples = hourly_temp_file_sawtooth()
+        for end in range(4 * 12 + 1, len(samples) + 1):   # from 4 hours of history
+            self.assertIsNone(evaluate(samples[:end], CAP), end)
 
     def test_shrinking_disk_no_alert(self):
         self.assertIsNone(evaluate(series(0.8, -1.0, seed=7), CAP))
