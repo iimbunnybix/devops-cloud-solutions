@@ -53,6 +53,7 @@ Every problem folder has the same structure:
 | 036 | [The API slowed to a crawl every afternoon while its CPU graph showed only 30%](problems/036-burstable-cpu-credit-exhaustion) |
 | 037 | [Marketing emails arrived three hours late while the autoscaler said the workers were idle](problems/037-cpu-autoscaling-io-bound-queue-backlog) |
 | 038 | [Login went down twice during a routine Kubernetes node upgrade](problems/038-node-drain-without-disruption-budget) |
+| 039 | [On-call was woken at 3 a.m. for "50% errors" when only two requests had arrived](problems/039-error-ratio-alert-low-traffic-noise) |
 <!-- INDEX:END -->
 
 ## Run the tests
