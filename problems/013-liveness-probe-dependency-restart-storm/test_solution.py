@@ -4,7 +4,7 @@ from solution import (World, check_probe_config, local_liveness, naive_liveness,
                       simulate, slow_db)
 
 PODS, DUR = 20, 1_800
-SLOW_START, SLOW_END = 100, 400          # five-minute database slowdown
+SLOW_START, SLOW_END = 100, 700          # ten-minute database slowdown
 STARTUP = 45                             # JVM start + cache warm-up
 
 
@@ -14,6 +14,18 @@ def run(probe, **kw):
                     recovered_at=SLOW_END)
 
 
+def zero_gaps(available):
+    """Lengths of consecutive runs of seconds with no running pod."""
+    gaps, current = [], 0
+    for up in available:
+        if up == 0:
+            current += 1
+        elif current:
+            gaps.append(current)
+            current = 0
+    return gaps
+
+
 class ReproduceRestartStorm(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
@@ -21,16 +33,21 @@ class ReproduceRestartStorm(unittest.TestCase):
 
     def test_every_pod_restarts(self):
         self.assertGreaterEqual(self.res.restarts, PODS)
-        self.assertEqual(self.res.restarts, 80)
+        self.assertEqual(self.res.restarts, 100)
 
     def test_whole_fleet_down(self):
         self.assertGreater(self.res.seconds_at_zero(), 0)
-        self.assertEqual(self.res.seconds_at_zero(), 285)
+        self.assertEqual(self.res.seconds_at_zero(), 490)
 
-    def test_outage_outlasts_database_by_minutes(self):
+    def test_outage_outlasts_database_by_over_a_minute(self):
         delay = self.res.first_full_after - SLOW_END
         self.assertGreater(delay, 60)
-        self.assertEqual(delay, 124)
+        self.assertEqual(delay, 64)
+
+    def test_no_pods_running_for_a_while_after_database_recovered(self):
+        down_after = sum(1 for t, up in enumerate(self.res.available)
+                         if t >= SLOW_END and up == 0)
+        self.assertEqual(down_after, 55)
 
 
 class LocalLiveness(unittest.TestCase):
@@ -59,6 +76,13 @@ class KubeletModel(unittest.TestCase):
         # restarts get rarer as back-off doubles to the 300 s cap
         self.assertLess(res.restarts, 15)
         self.assertGreater(res.restarts, 5)
+
+    def test_backoff_sequence_is_10_20_40_doubling_to_300_cap(self):
+        world = World(lambda t: 0.0, hung_pods={0})
+        startup = 5
+        res = simulate(1, 1_500, world, local_liveness, startup_seconds=startup)
+        backoffs = [gap - startup for gap in zero_gaps(res.available)]
+        self.assertEqual(backoffs[:7], [10, 20, 40, 80, 160, 300, 300])
 
     def test_restart_after_failure_threshold(self):
         world = World(lambda t: 0.0, hung_pods={0})

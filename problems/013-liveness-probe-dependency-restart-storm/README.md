@@ -1,4 +1,4 @@
-# 013 · A five-minute database slowdown took the whole API down, and it stayed down after the database recovered
+# 013 · A ten-minute database slowdown took the whole API down, and it stayed down after the database recovered
 
 ## Problem
 An orders API runs as 20 pods on Kubernetes. Its `/healthz` endpoint, used
@@ -8,12 +8,12 @@ every 10 s and the kubelet restarts a container after 3 consecutive failures.
 Each pod needs about 45 s to start and warm its caches.
 
 During a vacuum-heavy maintenance window the primary database slowed to
-~2.5 s per query for five minutes. Requests got slow, which was expected. Then
+~2.5 s per query for ten minutes. Requests got slow, which was expected. Then
 every pod was restarted at roughly the same time, then restarted again, and
-the API returned 503s for nearly five minutes because there were no pods
-running at all. After the database had recovered, the API still took about
-two more minutes to get back to full capacity while pods sat in crash-loop
-back-off.
+the API returned 503s for about eight minutes in total because there were no
+pods running at all. Even after the database had recovered, there were no pods
+running for almost another minute, and the API took more than a minute to get
+back to full capacity while pods sat in crash-loop back-off.
 
 ## Root cause
 **The liveness probe checked a shared dependency.** Liveness should detect
@@ -26,8 +26,9 @@ kubelet's crash-loop back-off (10 s, doubling to a 300 s cap) kept pods down
 after the cause was gone.
 
 The second-by-second simulation in `solution.py` reproduces the incident with
-Kubernetes defaults: **80 restarts, 285 seconds with zero running pods, and
-full capacity only 124 seconds after the database recovered.**
+Kubernetes defaults (back-off 10, 20, 40, ... s): **100 restarts, 490 seconds
+with zero running pods (55 of them after the database had already recovered),
+and full capacity only 64 seconds after the database recovered.**
 
 ## Solution
 - **`local_liveness`**: the liveness endpoint (`/livez`) checks only the

@@ -96,7 +96,8 @@ def simulate(pods: int, duration: int, world: World, probe: Probe, *,
                 continue
             p.failures += 1
             if p.failures >= failure_threshold:
-                delay = min(BACKOFF_BASE * 2 ** p.restarts, BACKOFF_CAP) if p.restarts else 0
+                # Kubernetes waits 10 s before the first restart, then doubles.
+                delay = min(BACKOFF_BASE * 2 ** p.restarts, BACKOFF_CAP)
                 p.restarts += 1
                 restarts += 1
                 p.state, p.until, p.failures = "backoff", t + delay, 0
