@@ -54,6 +54,7 @@ Every problem folder has the same structure:
 | 037 | [Marketing emails arrived three hours late while the autoscaler said the workers were idle](problems/037-cpu-autoscaling-io-bound-queue-backlog) |
 | 038 | [Login went down twice during a routine Kubernetes node upgrade](problems/038-node-drain-without-disruption-budget) |
 | 039 | [On-call was woken at 3 a.m. for "50% errors" when only two requests had arrived](problems/039-error-ratio-alert-low-traffic-noise) |
+| 040 | [Image workers were OOMKilled over and over under load, although each one planned to use only "half the memory"](problems/040-cache-sized-from-host-ram-oomkilled) |
 <!-- INDEX:END -->
 
 ## Run the tests
