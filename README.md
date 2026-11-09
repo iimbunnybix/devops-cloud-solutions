@@ -55,6 +55,7 @@ Every problem folder has the same structure:
 | 038 | [Login went down twice during a routine Kubernetes node upgrade](problems/038-node-drain-without-disruption-budget) |
 | 039 | [On-call was woken at 3 a.m. for "50% errors" when only two requests had arrived](problems/039-error-ratio-alert-low-traffic-noise) |
 | 040 | [Image workers were OOMKilled over and over under load, although each one planned to use only "half the memory"](problems/040-cache-sized-from-host-ram-oomkilled) |
+| 041 | [Every dashboard and alert went blank an hour after a release added user_id to a request metric](problems/041-metric-label-cardinality-explosion) |
 <!-- INDEX:END -->
 
 ## Run the tests
