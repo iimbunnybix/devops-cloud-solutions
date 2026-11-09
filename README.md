@@ -56,6 +56,7 @@ Every problem folder has the same structure:
 | 039 | [On-call was woken at 3 a.m. for "50% errors" when only two requests had arrived](problems/039-error-ratio-alert-low-traffic-noise) |
 | 040 | [Image workers were OOMKilled over and over under load, although each one planned to use only "half the memory"](problems/040-cache-sized-from-host-ram-oomkilled) |
 | 041 | [Every dashboard and alert went blank an hour after a release added user_id to a request metric](problems/041-metric-label-cardinality-explosion) |
+| 042 | [After a data-center migration, a quarter of traffic kept reaching the old servers for almost a day](problems/042-dns-ttl-lowered-too-late-cutover) |
 <!-- INDEX:END -->
 
 ## Run the tests
