@@ -1,4 +1,5 @@
 import random
+import string
 import unittest
 import uuid
 
@@ -93,6 +94,69 @@ class Surges(unittest.TestCase):
     def test_bad_request_counts(self):
         with self.assertRaises(ValueError):
             compare_windows([], 0, [], 10)
+
+
+def fake_charge_id(rng):
+    """Stripe-style id built at runtime: 'ch_' + 14 letters and digits."""
+    alphabet = string.ascii_letters + string.digits
+    body = "".join(rng.choice(alphabet) for _ in range(13))
+    return "ch_" + str(rng.randint(0, 9)) + body       # always has a digit
+
+
+def fake_tenant_name(rng):
+    """A letters-only variable part that no mask can recognise."""
+    return "".join(rng.choice(string.ascii_lowercase) for _ in range(10))
+
+
+class IdsMixingLettersAndDigits(unittest.TestCase):
+    """Issue #21: ids like ch_3MqLiJ2eZvKYlo2C gave every event its own fingerprint."""
+
+    @classmethod
+    def setUpClass(cls):
+        rng = random.Random(42)
+        cls.base = window(rng, 100_000)
+        cls.after = window(rng, 100_000, new_rate=0.002, line_shift=7)
+        cls.rng = random.Random(7)
+
+    def card_errors(self, count, message):
+        return [ErrorEvent("checkout", "CardError", message(), "checkout/gateway.py:charge:90")
+                for _ in range(count)]
+
+    def test_stripe_style_charge_id_is_masked(self):
+        self.assertEqual(template("card declined for charge " + fake_charge_id(self.rng)),
+                         "card declined for charge <id>")
+
+    def test_short_hex_container_id_is_masked(self):
+        self.assertEqual(template("container 3f4e1a9c2b7d exited"), "container <id> exited")
+
+    def test_number_with_unit_and_short_words_are_not_ids(self):
+        self.assertEqual(template("utf8 decode took 9000ms"), "utf8 decode took <num>")
+
+    def test_new_error_with_charge_ids_is_reported(self):
+        new = self.card_errors(300, lambda: "card declined for charge " + fake_charge_id(self.rng))
+        findings = compare_windows(self.base, 100_000, self.after + new, 100_000)
+        card = [f for f in findings if "CardError" in f.example]
+        self.assertEqual(len(card), 1)
+        self.assertEqual((card[0].kind, card[0].count, card[0].grouped), ("new", 300, False))
+
+    def test_unmaskable_variable_part_is_still_reported_by_pooling(self):
+        new = self.card_errors(300, lambda: "card declined for tenant " + fake_tenant_name(self.rng))
+        findings = compare_windows(self.base, 100_000, self.after + new, 100_000)
+        card = [f for f in findings if "CardError" in f.example]
+        self.assertEqual(len(card), 1)
+        self.assertEqual((card[0].kind, card[0].count, card[0].grouped), ("new", 300, True))
+
+    def test_unmasked_leftovers_of_a_reported_error_are_not_reported_twice(self):
+        new = self.card_errors(300, lambda: "card declined for charge " + fake_charge_id(self.rng))
+        new += self.card_errors(20, lambda: "card declined for charge ch_" + fake_tenant_name(self.rng))
+        findings = compare_windows(self.base, 100_000, self.after + new, 100_000)
+        card = [f for f in findings if "CardError" in f.example]
+        self.assertEqual([(f.count, f.grouped) for f in card], [(300, False)])
+
+    def test_pooled_known_rare_errors_at_steady_rate_are_not_reported(self):
+        base = self.card_errors(40, lambda: "declined for tenant " + fake_tenant_name(self.rng))
+        after = self.card_errors(40, lambda: "declined for tenant " + fake_tenant_name(self.rng))
+        self.assertEqual(compare_windows(base, 10_000, after, 10_000), [])
 
 
 class Templates(unittest.TestCase):

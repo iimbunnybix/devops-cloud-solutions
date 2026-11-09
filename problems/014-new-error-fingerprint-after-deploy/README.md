@@ -24,7 +24,8 @@ two days later, from customer complaints and a drop in coupon redemptions.
 `solution.py`:
 
 1. **`template`** masks variable parts (UUIDs, emails, IPs, URLs, hex values,
-   quoted strings, numbers with units) so that
+   quoted strings, numbers with units, and ids of 8+ characters that mix
+   letters and digits such as `ch_3MqLiJ2eZvKYlo2C` or `3f4e1a9c2b7d`) so that
    `invalid postcode '48213X' for user u8812@example.com` becomes
    `invalid postcode <str> for user <email>`.
 2. **`fingerprint`** hashes service, exception type, template and top stack
@@ -39,6 +40,14 @@ two days later, from customer complaints and a drop in coupon redemptions.
      least `surge_ratio` (3x by default). A traffic increase alone is not a
      surge.
 
+   **Safety net:** events whose own fingerprint stays below `min_count` are
+   pooled by service, exception type and frame (message ignored). If a
+   message carries a variable part no mask recognises, every event gets its
+   own fingerprint; without pooling, 300 such events would be 300 "one-offs"
+   and the new error would never be reported. Pooled findings have
+   `grouped=True`, and are skipped when the same error is already reported
+   by its normal fingerprint.
+
 Run as a post-deploy check (for example 30 minutes after each rollout, and as
 a gate in the canary analysis, see 003), it reports exactly one finding for
 the incident: the new `KeyError` in `checkout/pricing.py:apply_coupon`, 201
@@ -50,6 +59,11 @@ error types are not reported.
   different errors; too weak leaves ids in templates. Keep the rules in one
   place and add tests when a new log format appears. Structured logging
   (a constant message plus fields) removes most of the problem at the source.
+- The pooling safety net is coarser: two different new errors raised from
+  the same function with the same exception type are merged into one pooled
+  finding. The `<id>` mask can also hide a meaningful token such as
+  `sha256abc`; a short letters-only id is not masked at all and is left to
+  the safety net.
 - The baseline must be comparable: same time of day and traffic mix, or use
   several previous days. A daily batch job's errors look "new" if the
   baseline window missed the batch.
