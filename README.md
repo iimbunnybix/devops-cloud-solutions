@@ -57,6 +57,7 @@ Every problem folder has the same structure:
 | 040 | [Image workers were OOMKilled over and over under load, although each one planned to use only "half the memory"](problems/040-cache-sized-from-host-ram-oomkilled) |
 | 041 | [Every dashboard and alert went blank an hour after a release added user_id to a request metric](problems/041-metric-label-cardinality-explosion) |
 | 042 | [After a data-center migration, a quarter of traffic kept reaching the old servers for almost a day](problems/042-dns-ttl-lowered-too-late-cutover) |
+| 043 | ["Checkout traffic dropped 30%" paged every other minute while traffic was perfectly flat](problems/043-traffic-drop-alert-on-unfinished-minute) |
 <!-- INDEX:END -->
 
 ## Run the tests
