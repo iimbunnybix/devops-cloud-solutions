@@ -7,7 +7,9 @@ Alertmanager does: identical alerts are merged by a label fingerprint, alerts
 that share the grouping labels (e.g. alertname + cluster) wait a short
 ``group_wait`` and go out as one notification, new alerts joining a group that
 already paged are batched every ``group_interval``, and an unchanged group is
-only re-sent after ``repeat_interval``.
+only re-sent after ``repeat_interval``. A group whose alerts all resolve keeps
+its paging history until ``repeat_interval`` passes, so an alert that flaps
+(fires, resolves, fires again) does not page again on every flap.
 """
 from __future__ import annotations
 
@@ -90,22 +92,44 @@ class AlertGrouper:
         group.alerts[fingerprint(labels)] = labels
 
     def resolve(self, labels: Labels) -> None:
-        """Remove an alert that stopped firing; drop the group once empty."""
+        """Remove an alert that stopped firing.
+
+        An emptied group that never paged has no history worth keeping, so it
+        is dropped. A group that already paged is kept (empty) so that if the
+        alert fires again soon, group_interval / repeat_interval still apply.
+        """
         key = self.group_key(labels)
         group = self.groups.get(key)
         if group is None:
             return
         group.alerts.pop(fingerprint(labels), None)
-        if not group.alerts:
+        if not group.alerts and group.last_sent_at is None:
             del self.groups[key]
 
     def flush(self, now: float) -> list[Notification]:
         """Send whatever notifications are due at ``now`` and return them."""
+        self._forget_quiet_groups(now)
         due = []
         for group in self.groups.values():
-            if self._is_due(group, now):
+            # An empty group has nothing firing, so there is nothing to page.
+            if group.alerts and self._is_due(group, now):
                 due.append(self._send(group, now))
         return due
+
+    def _forget_quiet_groups(self, now: float) -> None:
+        """Drop empty groups whose last page is older than repeat_interval.
+
+        After that long, a re-fire would be re-paged anyway, so the history
+        no longer changes any decision and only costs memory.
+        """
+        expired_keys = []
+        for key, group in self.groups.items():
+            if group.alerts or group.last_sent_at is None:
+                continue
+            if now - group.last_sent_at >= self.repeat_interval_s:
+                expired_keys.append(key)
+        for key in expired_keys:
+            del self.groups[key]
 
     def _is_due(self, group: AlertGroup, now: float) -> bool:
         """Decide whether a group should page now."""

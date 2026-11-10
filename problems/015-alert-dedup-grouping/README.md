@@ -33,6 +33,12 @@ model as Prometheus Alertmanager:
    loses members, send an update, at most once per interval.
 5. **`repeat_interval` (4 h):** an unchanged, still-firing group is re-sent
    only after this long.
+6. **Flapping alerts keep their history.** When every alert in a group that
+   already paged resolves, the group is kept (empty, sending nothing) until
+   `repeat_interval` has passed since its last page. If the alert fires again
+   in that window, the limits above still apply instead of the alert paging
+   again after only `group_wait`. An alert that fires for 60 s and resolves
+   for 60 s for a whole hour sends **1 page** instead of 30.
 
 Replaying the same outage through the grouper (tests, fake clock) sends
 **2 notifications** instead of 310: one for `PostgresDown` and one for
