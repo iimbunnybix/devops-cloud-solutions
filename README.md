@@ -59,6 +59,7 @@ Every problem folder has the same structure:
 | 042 | [After a data-center migration, a quarter of traffic kept reaching the old servers for almost a day](problems/042-dns-ttl-lowered-too-late-cutover) |
 | 043 | ["Checkout traffic dropped 30%" paged every other minute while traffic was perfectly flat](problems/043-traffic-drop-alert-on-unfinished-minute) |
 | 044 | [After a certificate renewal the mobile app and partner integrations failed with "unable to get local issuer certificate", while the website worked in every browser](problems/044-tls-renewal-missing-intermediate-chain) |
+| 045 | [Edge proxies crashed with "Expecting value: line 1 column 1" a few seconds into every routing deploy](problems/045-non-atomic-config-write-partial-read) |
 <!-- INDEX:END -->
 
 ## Run the tests
