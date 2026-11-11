@@ -34,8 +34,9 @@ receive `t3`.
 - **Round-trip delay** = `(t3 − t0) − (t2 − t1)`. If the delays are not
   equal, the offset is wrong by at most half of this, so it is the error bound.
 - **Keep the fastest samples.** `estimate_skew` takes the 3 lowest round-trip
-  samples, uses the median of their offsets and the fastest sample's half
-  round trip as the error bound.
+  samples, uses the median of their offsets and the largest half round trip
+  among those kept samples as the error bound (the median can come from any of
+  them, so the bound must cover the slowest).
 - **Alert only when the skew is beyond the threshold even in the best case**
   (`|offset| − error_bound > 0.5 s`), so network noise cannot page.
 - **`drift_rate_ppm`** fits a line through offsets measured over days. A

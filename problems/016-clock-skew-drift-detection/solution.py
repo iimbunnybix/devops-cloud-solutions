@@ -80,6 +80,14 @@ def median(values: list[float]) -> float:
     return (ordered[middle - 1] + ordered[middle]) / 2
 
 
+def worst_case_error(samples: list[TimeSample]) -> float:
+    """Largest half round trip among the samples: the error bound for any of their offsets."""
+    largest_delay = 0.0
+    for sample in samples:
+        largest_delay = max(largest_delay, round_trip_delay(sample))
+    return largest_delay / 2
+
+
 def estimate_skew(samples: list[TimeSample],
                   threshold_s: float = SKEW_ALERT_THRESHOLD_S,
                   keep: int = BEST_SAMPLES_TO_KEEP) -> SkewReport:
@@ -91,7 +99,9 @@ def estimate_skew(samples: list[TimeSample],
     for sample in fastest:
         offsets.append(ntp_offset(sample))
     offset = median(offsets)
-    error_bound = round_trip_delay(fastest[0]) / 2
+    # The median may come from any of the kept samples, so the bound must cover
+    # the slowest of them; the fastest sample's bound alone would be too tight.
+    error_bound = worst_case_error(fastest)
     # Alert only if the skew is beyond the threshold even in the best case,
     # so network noise alone can never page anyone.
     alert = abs(offset) - error_bound > threshold_s

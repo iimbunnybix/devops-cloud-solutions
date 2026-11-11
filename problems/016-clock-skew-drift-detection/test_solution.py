@@ -43,6 +43,13 @@ def token_is_valid(issued_at: float, local_now: float, leeway_s: float = 60) -> 
     return issued_at <= local_now + leeway_s
 
 
+def asymmetric_sample(sent_at: float, outbound_s: float, inbound_s: float) -> TimeSample:
+    """Exchange with a perfectly synced server and different delay each way."""
+    server_receive = sent_at + outbound_s
+    server_send = server_receive + SERVER_PROCESSING_S
+    return TimeSample(t0=sent_at, t1=server_receive, t2=server_send, t3=server_send + inbound_s)
+
+
 class ReproduceProblem(unittest.TestCase):
     def test_naive_check_alerts_on_a_perfectly_synced_host(self):
         samples = FakeNetwork(client_offset_s=0.0).samples(1000)
@@ -89,6 +96,19 @@ class FixAlerting(unittest.TestCase):
         report = estimate_skew([sample])
         self.assertAlmostEqual(report.offset_s, 0.6)
         self.assertFalse(report.alert)
+
+    def test_synced_host_on_asymmetric_slow_path_does_not_alert(self):
+        # One fast exchange, four with a congested 1.2-1.4 s outbound path.
+        samples = [
+            asymmetric_sample(0.0, outbound_s=0.010, inbound_s=0.010),
+            asymmetric_sample(1.0, outbound_s=1.20, inbound_s=0.005),
+            asymmetric_sample(2.0, outbound_s=1.25, inbound_s=0.005),
+            asymmetric_sample(3.0, outbound_s=1.30, inbound_s=0.006),
+            asymmetric_sample(4.0, outbound_s=1.40, inbound_s=0.010),
+        ]
+        report = estimate_skew(samples)
+        self.assertFalse(report.alert)
+        self.assertLessEqual(abs(report.offset_s), report.error_bound_s)
 
     def test_no_samples_is_an_error(self):
         with self.assertRaises(ValueError):
