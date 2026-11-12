@@ -61,6 +61,7 @@ Every problem folder has the same structure:
 | 044 | [After a certificate renewal the mobile app and partner integrations failed with "unable to get local issuer certificate", while the website worked in every browser](problems/044-tls-renewal-missing-intermediate-chain) |
 | 045 | [Edge proxies crashed with "Expecting value: line 1 column 1" a few seconds into every routing deploy](problems/045-non-atomic-config-write-partial-read) |
 | 046 | [The status page said 90% available while 40% of requests in our busiest region were failing](problems/046-unweighted-region-availability-hides-outage) |
+| 047 | [The metrics server timed out at the top of every hour, and was idle for the other 59 minutes](problems/047-fleet-cron-thundering-herd-splay) |
 <!-- INDEX:END -->
 
 ## Run the tests
