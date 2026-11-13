@@ -63,6 +63,7 @@ Every problem folder has the same structure:
 | 046 | [The status page said 90% available while 40% of requests in our busiest region were failing](problems/046-unweighted-region-availability-hides-outage) |
 | 047 | [The metrics server timed out at the top of every hour, and was idle for the other 59 minutes](problems/047-fleet-cron-thundering-herd-splay) |
 | 048 | [Checkout failed every payment with 401 an hour after a "successful" API key rotation](problems/048-config-change-no-rollout-stale-secret) |
+| 049 | [Checkout was down for 40 minutes while the uptime dashboard stayed at 100%](problems/049-uptime-check-follows-redirect-to-maintenance-page) |
 <!-- INDEX:END -->
 
 ## Run the tests
