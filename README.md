@@ -64,6 +64,7 @@ Every problem folder has the same structure:
 | 047 | [The metrics server timed out at the top of every hour, and was idle for the other 59 minutes](problems/047-fleet-cron-thundering-herd-splay) |
 | 048 | [Checkout failed every payment with 401 an hour after a "successful" API key rotation](problems/048-config-change-no-rollout-stale-secret) |
 | 049 | [Checkout was down for 40 minutes while the uptime dashboard stayed at 100%](problems/049-uptime-check-follows-redirect-to-maintenance-page) |
+| 050 | [After shipping 1.10.0, "deploy latest" kept rolling production back to 1.9.1](problems/050-string-sorted-versions-deploy-old-release) |
 <!-- INDEX:END -->
 
 ## Run the tests
