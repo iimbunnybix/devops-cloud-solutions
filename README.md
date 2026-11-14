@@ -66,6 +66,7 @@ Every problem folder has the same structure:
 | 049 | [Checkout was down for 40 minutes while the uptime dashboard stayed at 100%](problems/049-uptime-check-follows-redirect-to-maintenance-page) |
 | 050 | [After shipping 1.10.0, "deploy latest" kept rolling production back to 1.9.1](problems/050-string-sorted-versions-deploy-old-release) |
 | 051 | [Just after midnight on 1 January the "checkout errors" alert went silent while payments were failing](problems/051-syslog-missing-year-new-year-errors-dated-future) |
+| 052 | [The database got corrupted and the newest restorable backup had been deleted three days earlier](problems/052-retention-counts-failed-backups-deletes-last-good) |
 <!-- INDEX:END -->
 
 ## Run the tests
