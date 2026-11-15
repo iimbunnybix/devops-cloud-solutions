@@ -68,6 +68,7 @@ Every problem folder has the same structure:
 | 051 | [Just after midnight on 1 January the "checkout errors" alert went silent while payments were failing](problems/051-syslog-missing-year-new-year-errors-dated-future) |
 | 052 | [The database got corrupted and the newest restorable backup had been deleted three days earlier](problems/052-retention-counts-failed-backups-deletes-last-good) |
 | 053 | [An approved infrastructure change quietly undid a teammate's emergency scale-up](problems/053-stale-saved-plan-reverts-teammates-change) |
+| 054 | [Customers got a "monthly" account statement every Monday](problems/054-cron-day-of-month-and-weekday-run-every-monday) |
 <!-- INDEX:END -->
 
 ## Run the tests
