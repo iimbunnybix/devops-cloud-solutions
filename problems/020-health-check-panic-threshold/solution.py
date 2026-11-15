@@ -61,6 +61,8 @@ class LoadBalancer:
     def __init__(self, backend_names: list[str], panic_threshold: float = PANIC_THRESHOLD) -> None:
         if not backend_names:
             raise ValueError("a load balancer needs at least one backend")
+        if not 0.0 <= panic_threshold <= 1.0:
+            raise ValueError("panic_threshold must be between 0.0 and 1.0")
         self.backends = {name: BackendHealth(name) for name in backend_names}
         self.panic_threshold = panic_threshold
         self._next_index = 0
@@ -75,7 +77,13 @@ class LoadBalancer:
 
     def in_panic_mode(self) -> bool:
         """True when the healthy share has dropped below the panic threshold."""
-        healthy_share = len(self.healthy_names()) / len(self.backends)
+        healthy_count = len(self.healthy_names())
+        # With nobody healthy we must fail open whatever the threshold, or
+        # the pool is empty; this makes a threshold of 0.0 mean "panic only
+        # when zero backends are healthy" instead of "never panic".
+        if healthy_count == 0:
+            return True
+        healthy_share = healthy_count / len(self.backends)
         return healthy_share < self.panic_threshold
 
     def routable_backends(self) -> list[str]:

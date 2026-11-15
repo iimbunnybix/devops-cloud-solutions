@@ -86,5 +86,28 @@ class FixPanicThreshold(unittest.TestCase):
             LoadBalancer([])
 
 
+class FixZeroPanicThreshold(unittest.TestCase):
+    """panic_threshold=0.0 means "fail open only when zero are healthy"."""
+
+    def setUp(self):
+        self.balancer = LoadBalancer(backend_names(), panic_threshold=0.0)
+
+    def test_all_failed_pool_with_zero_threshold_routes_to_every_backend(self):
+        fail_checks(self.balancer, backend_names(), rounds=UNHEALTHY_AFTER_FAILURES)
+        self.assertTrue(self.balancer.in_panic_mode())
+        self.assertEqual(self.balancer.routable_backends(), backend_names())
+        self.assertIn(self.balancer.pick_backend(), backend_names())
+
+    def test_one_failed_backend_with_zero_threshold_is_ejected_without_panic(self):
+        fail_checks(self.balancer, ["web-0"], rounds=UNHEALTHY_AFTER_FAILURES)
+        self.assertFalse(self.balancer.in_panic_mode())
+        self.assertNotIn("web-0", self.balancer.routable_backends())
+
+    def test_threshold_outside_zero_to_one_is_rejected(self):
+        for bad_threshold in (-0.1, 1.5):
+            with self.assertRaises(ValueError):
+                LoadBalancer(backend_names(), panic_threshold=bad_threshold)
+
+
 if __name__ == "__main__":
     unittest.main()
