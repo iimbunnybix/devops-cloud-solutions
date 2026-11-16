@@ -70,6 +70,7 @@ Every problem folder has the same structure:
 | 053 | [An approved infrastructure change quietly undid a teammate's emergency scale-up](problems/053-stale-saved-plan-reverts-teammates-change) |
 | 054 | [Customers got a "monthly" account statement every Monday](problems/054-cron-day-of-month-and-weekday-run-every-monday) |
 | 055 | [On-call set RECOMMENDATIONS_ENABLED=false to stop a failing feature, but it stayed on for another 40 minutes](problems/055-env-flag-false-string-is-truthy) |
+| 056 | [A database alert paged at 02:14 on Sunday and nobody answered for seven hours](problems/056-on-call-swap-leaves-rotation-gap) |
 <!-- INDEX:END -->
 
 ## Run the tests
