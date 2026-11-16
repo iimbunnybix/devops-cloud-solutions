@@ -69,6 +69,7 @@ Every problem folder has the same structure:
 | 052 | [The database got corrupted and the newest restorable backup had been deleted three days earlier](problems/052-retention-counts-failed-backups-deletes-last-good) |
 | 053 | [An approved infrastructure change quietly undid a teammate's emergency scale-up](problems/053-stale-saved-plan-reverts-teammates-change) |
 | 054 | [Customers got a "monthly" account statement every Monday](problems/054-cron-day-of-month-and-weekday-run-every-monday) |
+| 055 | [On-call set RECOMMENDATIONS_ENABLED=false to stop a failing feature, but it stayed on for another 40 minutes](problems/055-env-flag-false-string-is-truthy) |
 <!-- INDEX:END -->
 
 ## Run the tests
