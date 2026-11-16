@@ -77,24 +77,38 @@ def deleted_inode_holders(processes: list[Process], mount_point: str) -> dict[in
     holders: dict[int, set[int]] = {}
     for process in processes:
         for open_fd in process.open_fds:
-            if open_fd.link_count != 0 or not is_on_mount(open_fd.path, mount_point):
+            if not is_deleted_on_mount(open_fd, mount_point):
                 continue
             holders.setdefault(open_fd.inode, set()).add(process.pid)
     return holders
 
 
-def inode_sizes(processes: list[Process]) -> dict[int, int]:
-    """Size of every open inode (several fds may point at the same inode)."""
+def is_deleted_on_mount(open_fd: OpenFd, mount_point: str) -> bool:
+    """True if the fd points at a file with no name left, on the full mount.
+
+    Inode numbers are only unique within one filesystem, so every lookup by
+    inode number must first be limited to fds on this mount.
+    """
+    return open_fd.link_count == 0 and is_on_mount(open_fd.path, mount_point)
+
+
+def inode_sizes(processes: list[Process], mount_point: str) -> dict[int, int]:
+    """Size of every deleted-but-open inode on the mount (fds may share one).
+
+    Fds on other mounts are skipped: they can reuse the same inode number and
+    would otherwise overwrite the size of the deleted file we care about.
+    """
     sizes: dict[int, int] = {}
     for process in processes:
         for open_fd in process.open_fds:
-            sizes[open_fd.inode] = open_fd.size_bytes
+            if is_deleted_on_mount(open_fd, mount_point):
+                sizes[open_fd.inode] = open_fd.size_bytes
     return sizes
 
 
 def hidden_bytes(processes: list[Process], mount_point: str) -> int:
     """Bytes `df` counts but `du` cannot find, counting each inode once."""
-    sizes = inode_sizes(processes)
+    sizes = inode_sizes(processes, mount_point)
     total = 0
     for inode in deleted_inode_holders(processes, mount_point):
         total += sizes[inode]
@@ -124,14 +138,16 @@ def recommend(processes: list[Process], mount_point: str,
     """
     signals = DEFAULT_REOPEN_SIGNALS if reopen_signals is None else reopen_signals
     holders = deleted_inode_holders(processes, mount_point)
-    sizes = inode_sizes(processes)
+    sizes = inode_sizes(processes, mount_point)
     recommendations: list[Recommendation] = []
     for process in processes:
         exclusive_bytes = 0
         paths: list[str] = []
         seen_inodes: set[int] = set()
         for open_fd in process.open_fds:
-            if open_fd.inode not in holders or open_fd.inode in seen_inodes:
+            # Check the fd itself, not just its inode number: an fd on another
+            # mount can carry the same number without being deleted at all.
+            if not is_deleted_on_mount(open_fd, mount_point) or open_fd.inode in seen_inodes:
                 continue
             seen_inodes.add(open_fd.inode)
             paths.append(open_fd.path)

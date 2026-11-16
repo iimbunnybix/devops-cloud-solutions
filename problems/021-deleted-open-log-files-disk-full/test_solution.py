@@ -93,5 +93,24 @@ class FixRecommendsActions(unittest.TestCase):
         self.assertEqual(by_pid[1201].action, "restart")
 
 
+class FixInodeNumbersOnOtherMounts(unittest.TestCase):
+    """Inode numbers are only unique per filesystem, so another mount can reuse 201."""
+
+    def colliding_processes(self) -> list[Process]:
+        nginx = Process(1201, "nginx", [
+            OpenFd(3, "/var/log/nginx/access.log.1", 201, 160 * GIB, link_count=0)])
+        # A still-linked socket on /tmp that happens to have inode number 201 too.
+        redis = Process(4000, "redis", [OpenFd(9, "/tmp/redis.sock", 201, 0, link_count=1)])
+        return [nginx, redis]
+
+    def test_same_inode_number_on_another_mount_does_not_hide_the_space(self):
+        self.assertEqual(hidden_bytes(self.colliding_processes(), "/var"), 160 * GIB)
+
+    def test_process_on_another_mount_is_not_told_to_restart(self):
+        recommendations = recommend(self.colliding_processes(), "/var")
+        self.assertEqual([rec.pid for rec in recommendations], [1201])
+        self.assertEqual(recommendations[0].reclaimable_bytes, 160 * GIB)
+
+
 if __name__ == "__main__":
     unittest.main()
