@@ -68,7 +68,10 @@ def restore_row_counts(backup: Backup) -> dict[str, int]:
     counts: dict[str, int] = {}
     for file_name, contents in backup.files.items():
         rows = 0
-        for line in contents.decode("utf-8").splitlines():
+        # Count lines on raw bytes: a dump truncated in the middle of a
+        # multi-byte character is not valid UTF-8, and decoding it would crash
+        # the verifier exactly when it should be raising an alert.
+        for line in contents.splitlines():
             if line.strip():
                 rows += 1
         counts[table_name(file_name)] = rows

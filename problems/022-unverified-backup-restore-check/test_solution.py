@@ -87,6 +87,15 @@ class FixVerifiesRestore(unittest.TestCase):
         source = {"orders": 1_000, "customers": 0}
         self.assertTrue(verify_backup(make_backup(customers=0), source, CHECK_TIME).ok)
 
+    def test_dump_truncated_inside_a_multibyte_character_fails_without_crashing(self):
+        full_dump = "1,José\n2,Zoë\n".encode() * 100
+        # Byte 6 is the middle of the two-byte "é", so the cut file is not valid UTF-8.
+        backup = Backup(BACKUP_TIME, {"customers.csv": full_dump[:6]},
+                        {"customers.csv": sha256_hex(full_dump)})
+        report = verify_backup(backup, {"customers": 200}, CHECK_TIME)
+        self.assertIn("customers.csv: checksum mismatch", report.failures)
+        self.assertIn("customers: restored 1 rows, source has 200", report.failures)
+
 
 if __name__ == "__main__":
     unittest.main()
