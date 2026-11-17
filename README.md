@@ -72,6 +72,7 @@ Every problem folder has the same structure:
 | 055 | [On-call set RECOMMENDATIONS_ENABLED=false to stop a failing feature, but it stayed on for another 40 minutes](problems/055-env-flag-false-string-is-truthy) |
 | 056 | [A database alert paged at 02:14 on Sunday and nobody answered for seven hours](problems/056-on-call-swap-leaves-rotation-gap) |
 | 057 | [The emergency rollback deployed a release that had never run in production, and the second rollback brought the broken release back](problems/057-rollback-picks-previous-build-never-deployed) |
+| 058 | [Workers kept getting OOM-killed while the memory dashboard showed a flat 45% and the 90% alert never fired](problems/058-scraped-gauge-misses-short-memory-spikes) |
 <!-- INDEX:END -->
 
 ## Run the tests
