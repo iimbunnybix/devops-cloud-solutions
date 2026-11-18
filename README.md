@@ -73,6 +73,7 @@ Every problem folder has the same structure:
 | 056 | [A database alert paged at 02:14 on Sunday and nobody answered for seven hours](problems/056-on-call-swap-leaves-rotation-gap) |
 | 057 | [The emergency rollback deployed a release that had never run in production, and the second rollback brought the broken release back](problems/057-rollback-picks-previous-build-never-deployed) |
 | 058 | [Workers kept getting OOM-killed while the memory dashboard showed a flat 45% and the 90% alert never fired](problems/058-scraped-gauge-misses-short-memory-spikes) |
+| 059 | [Clients saw a handful of random 502s every hour from a healthy service, never reproducible and never in the app logs](problems/059-backend-keepalive-shorter-than-lb-idle-random-502s) |
 <!-- INDEX:END -->
 
 ## Run the tests
