@@ -75,6 +75,7 @@ Every problem folder has the same structure:
 | 058 | [Workers kept getting OOM-killed while the memory dashboard showed a flat 45% and the 90% alert never fired](problems/058-scraped-gauge-misses-short-memory-spikes) |
 | 059 | [Clients saw a handful of random 502s every hour from a healthy service, never reproducible and never in the app logs](problems/059-backend-keepalive-shorter-than-lb-idle-random-502s) |
 | 060 | [Half of all checkouts failed for an hour, yet the availability dashboard read 99.5% and the SLO alert never fired](problems/060-health-check-traffic-dilutes-availability-sli) |
+| 061 | [An auditor asked for the log line of a captured payment and it was in neither app.log nor app.log.1](problems/061-copytruncate-log-rotation-drops-lines) |
 <!-- INDEX:END -->
 
 ## Run the tests
