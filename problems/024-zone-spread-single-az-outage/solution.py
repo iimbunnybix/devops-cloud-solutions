@@ -81,16 +81,27 @@ def spread_place(nodes: list[Node], replicas: int, cpu_millis: int,
         raise ValueError("max_skew must be at least 1")
     zone_counts = {zone: 0 for zone in _zones(nodes)}
     placement: dict[str, str] = {}
+    reserved_nodes: list[Node] = []
     for replica_index in range(replicas):
         node = _choose_node(nodes, zone_counts, cpu_millis, max_skew)
         if node is None:
+            # All-or-nothing: give back the CPU reserved for earlier replicas,
+            # so a retry on the same nodes sees their real free capacity.
+            _release(reserved_nodes, cpu_millis)
             raise UnschedulableError(
                 f"replica-{replica_index}: no zone can take it within max_skew={max_skew} "
                 f"(current per-zone counts: {zone_counts})")
         node.free_cpu_millis -= cpu_millis
+        reserved_nodes.append(node)
         zone_counts[node.zone] += 1
         placement[f"replica-{replica_index}"] = node.name
     return placement
+
+
+def _release(reserved_nodes: list[Node], cpu_millis: int) -> None:
+    """Undo the CPU reservations of a placement that failed part-way."""
+    for node in reserved_nodes:
+        node.free_cpu_millis += cpu_millis
 
 
 def _choose_node(nodes: list[Node], zone_counts: dict[str, int], cpu_millis: int,

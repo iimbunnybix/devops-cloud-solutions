@@ -75,6 +75,19 @@ class FixZoneSpread(unittest.TestCase):
         self.assertEqual(replicas_per_zone(placement, nodes),
                          Counter({"zone-a": 3, "zone-b": 1}))
 
+    def test_failed_placement_leaves_node_capacity_unchanged(self):
+        nodes = [Node("a-1", "zone-a", 2000), Node("b-1", "zone-b", 2000), Node("c-1", "zone-c", 500)]
+        with self.assertRaises(UnschedulableError):
+            spread_place(nodes, replicas=6, cpu_millis=500)
+        self.assertEqual([node.free_cpu_millis for node in nodes], [2000, 2000, 500])
+
+    def test_retry_with_softer_skew_after_a_failure_succeeds(self):
+        nodes = [Node("a-1", "zone-a", 2000), Node("b-1", "zone-b", 2000), Node("c-1", "zone-c", 500)]
+        with self.assertRaises(UnschedulableError):
+            spread_place(nodes, replicas=6, cpu_millis=500)
+        placement = spread_place(nodes, replicas=6, cpu_millis=500, max_skew=3)
+        self.assertEqual(len(placement), 6)
+
     def test_max_skew_below_one_is_rejected(self):
         with self.assertRaises(ValueError):
             spread_place(cluster(), REPLICAS, REPLICA_CPU_MILLIS, max_skew=0)
