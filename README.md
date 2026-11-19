@@ -76,6 +76,7 @@ Every problem folder has the same structure:
 | 059 | [Clients saw a handful of random 502s every hour from a healthy service, never reproducible and never in the app logs](problems/059-backend-keepalive-shorter-than-lb-idle-random-502s) |
 | 060 | [Half of all checkouts failed for an hour, yet the availability dashboard read 99.5% and the SLO alert never fired](problems/060-health-check-traffic-dilutes-availability-sli) |
 | 061 | [An auditor asked for the log line of a captured payment and it was in neither app.log nor app.log.1](problems/061-copytruncate-log-rotation-drops-lines) |
+| 062 | [A three-hour checkout outage paged nobody because the alert said severity "Critical" instead of "critical"](problems/062-severity-label-case-change-sends-pages-to-null-receiver) |
 <!-- INDEX:END -->
 
 ## Run the tests
