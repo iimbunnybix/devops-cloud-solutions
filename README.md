@@ -77,6 +77,7 @@ Every problem folder has the same structure:
 | 060 | [Half of all checkouts failed for an hour, yet the availability dashboard read 99.5% and the SLO alert never fired](problems/060-health-check-traffic-dilutes-availability-sli) |
 | 061 | [An auditor asked for the log line of a captured payment and it was in neither app.log nor app.log.1](problems/061-copytruncate-log-rotation-drops-lines) |
 | 062 | [A three-hour checkout outage paged nobody because the alert said severity "Critical" instead of "critical"](problems/062-severity-label-case-change-sends-pages-to-null-receiver) |
+| 063 | [On-call was woken by 42 "site down" pages in a month, and customers never saw an outage](problems/063-single-location-uptime-check-pages-on-regional-blip) |
 <!-- INDEX:END -->
 
 ## Run the tests
