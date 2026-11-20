@@ -72,6 +72,13 @@ def compatibility_problems(app: AppVersion, schema: Schema) -> list[str]:
             if column_name not in existing:
                 problems.append(f"{app.name} reads {table}.{column_name}, which does not exist")
     for table, inserted_columns in sorted(app.inserts.items()):
+        existing = schema.get(table, {})
+        already_read = app.reads.get(table, set())
+        for column_name in sorted(inserted_columns):
+            # A write-only column (audit field, legacy flag) breaks every INSERT
+            # if it is dropped. Columns the app also reads were reported above.
+            if column_name not in existing and column_name not in already_read:
+                problems.append(f"{app.name} inserts {table}.{column_name}, which does not exist")
         for column in sorted(schema.get(table, {}).values(), key=lambda c: c.name):
             # The old release does not know about the new column, so every
             # INSERT it makes would violate NOT NULL.

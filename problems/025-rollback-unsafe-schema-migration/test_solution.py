@@ -57,6 +57,16 @@ class FixBlocksRollbackBreakingMigrations(unittest.TestCase):
         self.assertEqual(len(problems), 1)
         self.assertIn("coupon_code", problems[0])
 
+    def test_drop_of_a_column_the_old_release_only_writes_is_blocked(self):
+        old_app = AppVersion("release-41", reads={"orders": {"id", "total_cents"}},
+                             inserts={"orders": {"total_cents", "coupon_code"}})
+        new_app = AppVersion("release-42", reads={"orders": {"id", "total_cents"}},
+                             inserts={"orders": {"total_cents"}})
+        drop = [Operation("drop_column", "orders", Column("coupon_code"))]
+        problems = rollback_safe_deploy_gate(old_app, new_app, current_schema(), drop)
+        self.assertEqual(problems,
+                         ["rollback blocked: release-41 inserts orders.coupon_code, which does not exist"])
+
     def test_required_column_the_old_release_does_not_insert_is_blocked(self):
         add = [Operation("add_column", "orders", Column("currency", nullable=False))]
         new_app = AppVersion("release-42", inserts={"orders": {"coupon_code", "total_cents", "currency"}})
