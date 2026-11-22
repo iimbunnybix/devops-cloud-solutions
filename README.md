@@ -79,6 +79,7 @@ Every problem folder has the same structure:
 | 062 | [A three-hour checkout outage paged nobody because the alert said severity "Critical" instead of "critical"](problems/062-severity-label-case-change-sends-pages-to-null-receiver) |
 | 063 | [On-call was woken by 42 "site down" pages in a month, and customers never saw an outage](problems/063-single-location-uptime-check-pages-on-regional-blip) |
 | 064 | [The database migration failed, CI showed the deploy step green, and the new release crashed on a missing column](problems/064-piped-command-failure-masked-deploy-reports-success) |
+| 065 | [Removing one unused queue from the config made the plan destroy and recreate four live queues, and their unread messages were lost](problems/065-count-indexed-queue-list-removal-recreates-every-later-queue) |
 <!-- INDEX:END -->
 
 ## Run the tests
