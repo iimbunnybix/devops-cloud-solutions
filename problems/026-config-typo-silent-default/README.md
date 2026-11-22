@@ -45,6 +45,11 @@ startup:
 - The prefix rule only catches typos in the variable *name* that keep the
   prefix. A typo in the prefix itself (`CHEKOUT_...`) is still ignored;
   emitting the effective config at startup (secrets redacted) helps there.
+- Kubernetes injects service-link variables (`CHECKOUT_SERVICE_HOST`,
+  `CHECKOUT_PORT_80_TCP`, ...) for a Service named `checkout`, so the
+  loader skips names matching that pattern. Setting
+  `enableServiceLinks: false` on the pod, or using a more distinctive prefix
+  such as `CHECKOUT_CFG_`, avoids the overlap entirely.
 - Libraries such as `pydantic-settings` give typed, validated settings with
   less code if third-party dependencies are allowed.
 

@@ -36,6 +36,24 @@ class FixRejectsUnknownSettings(unittest.TestCase):
     def test_variables_without_the_app_prefix_are_ignored(self):
         self.assertEqual(errors_for(base_environment(PAYMENTS_MAX_DB_CONNECTION="5")), [])
 
+    def test_kubernetes_service_link_variables_are_ignored(self):
+        # Kubernetes injects these for a Service named "checkout" into every pod.
+        service_links = {
+            "CHECKOUT_SERVICE_HOST": "10.96.0.12",
+            "CHECKOUT_SERVICE_PORT": "80",
+            "CHECKOUT_SERVICE_PORT_HTTP": "80",
+            "CHECKOUT_PORT": "tcp://10.96.0.12:80",
+            "CHECKOUT_PORT_80_TCP": "tcp://10.96.0.12:80",
+            "CHECKOUT_PORT_80_TCP_ADDR": "10.96.0.12",
+            "CHECKOUT_PORT_80_TCP_PORT": "80",
+            "CHECKOUT_PORT_80_TCP_PROTO": "tcp",
+        }
+        self.assertEqual(errors_for(base_environment(**service_links)), [])
+
+    def test_lookalike_of_a_service_link_name_is_still_reported(self):
+        errors = errors_for(base_environment(CHECKOUT_PORT_HTTP="80"))
+        self.assertEqual(errors, ["unknown setting CHECKOUT_PORT_HTTP"])
+
 
 class FixValidatesValues(unittest.TestCase):
     def test_correct_spelling_is_applied(self):

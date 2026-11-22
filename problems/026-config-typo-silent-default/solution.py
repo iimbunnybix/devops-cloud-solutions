@@ -15,11 +15,20 @@ stops the process at startup with every error listed at once.
 from __future__ import annotations
 
 import difflib
+import re
 from dataclasses import dataclass
 from typing import Mapping
 
 APP_PREFIX = "CHECKOUT_"
 SUGGESTION_CUTOFF = 0.8
+# Kubernetes (enableServiceLinks, on by default) injects variables for every
+# Service in the namespace. A Service named "checkout" produces
+# CHECKOUT_SERVICE_HOST, CHECKOUT_SERVICE_PORT[_<name>], CHECKOUT_PORT and
+# CHECKOUT_PORT_<n>_<PROTO>[_ADDR|_PORT|_PROTO]. They are not our settings.
+SERVICE_LINK_PATTERN = re.compile(
+    re.escape(APP_PREFIX)
+    + r"(SERVICE_HOST|SERVICE_PORT(_\w+)?|PORT(_\d+_(TCP|UDP|SCTP)(_(ADDR|PORT|PROTO))?)?)"
+)
 
 
 @dataclass(frozen=True)
@@ -54,6 +63,11 @@ def naive_load(environ: Mapping[str, str]) -> dict[str, int]:
     return config
 
 
+def is_kubernetes_service_link(name: str) -> bool:
+    """True for variables Kubernetes injects for a Service named like our prefix."""
+    return SERVICE_LINK_PATTERN.fullmatch(name) is not None
+
+
 def unknown_variable_errors(environ: Mapping[str, str]) -> list[str]:
     """Report app-prefixed variables that match no setting, with a hint."""
     known_names = [setting.name for setting in SETTINGS]
@@ -61,6 +75,8 @@ def unknown_variable_errors(environ: Mapping[str, str]) -> list[str]:
     for name in sorted(environ):
         # Only our own prefix: the environment also holds PATH, HOME, etc.
         if not name.startswith(APP_PREFIX) or name in known_names:
+            continue
+        if is_kubernetes_service_link(name):
             continue
         message = f"unknown setting {name}"
         close = difflib.get_close_matches(name, known_names, n=1, cutoff=SUGGESTION_CUTOFF)
