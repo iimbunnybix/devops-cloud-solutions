@@ -80,6 +80,7 @@ Every problem folder has the same structure:
 | 063 | [On-call was woken by 42 "site down" pages in a month, and customers never saw an outage](problems/063-single-location-uptime-check-pages-on-regional-blip) |
 | 064 | [The database migration failed, CI showed the deploy step green, and the new release crashed on a missing column](problems/064-piped-command-failure-masked-deploy-reports-success) |
 | 065 | [Removing one unused queue from the config made the plan destroy and recreate four live queues, and their unread messages were lost](problems/065-count-indexed-queue-list-removal-recreates-every-later-queue) |
+| 066 | [After peering the new analytics VPC, connections to the office VPN and a partner network timed out](problems/066-hand-picked-vpc-cidr-overlaps-peered-network-traffic-black-holed) |
 <!-- INDEX:END -->
 
 ## Run the tests
