@@ -82,6 +82,7 @@ Every problem folder has the same structure:
 | 065 | [Removing one unused queue from the config made the plan destroy and recreate four live queues, and their unread messages were lost](problems/065-count-indexed-queue-list-removal-recreates-every-later-queue) |
 | 066 | [After peering the new analytics VPC, connections to the office VPN and a partner network timed out](problems/066-hand-picked-vpc-cidr-overlaps-peered-network-traffic-black-holed) |
 | 067 | [At peak traffic the pricing service failed 1 in 5 calls with "Cannot assign requested address" while the upstream was idle](problems/067-ephemeral-port-exhaustion-time-wait) |
+| 068 | [One web server returned 502 for 10% of all requests for two hours while the load balancer reported every target healthy](problems/068-static-health-check-file-keeps-dead-app-in-rotation) |
 <!-- INDEX:END -->
 
 ## Run the tests
