@@ -96,6 +96,11 @@ class ExportReport:
         """How many times an invoice was sent again after its first export."""
         return sum(count - 1 for count in self.export_counts.values() if count > 1)
 
+    @property
+    def invoices_duplicated(self) -> int:
+        """How many distinct invoices were sent more than once."""
+        return sum(1 for count in self.export_counts.values() if count > 1)
+
 
 class InvoiceExportJob:
     """Simulates the scheduler firing the export every INTERVAL_SECONDS."""

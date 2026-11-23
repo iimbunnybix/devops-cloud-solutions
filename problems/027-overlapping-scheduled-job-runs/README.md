@@ -1,4 +1,4 @@
-# 027 · Accounting received the same invoices twice whenever the database was slow, because the 5-minute export started on top of itself
+# 027 · Accounting received the same invoices several times whenever the database was slow, because the 5-minute export started on top of itself
 
 ## Problem
 An invoice export job runs every 5 minutes from a scheduler. It collects
@@ -22,7 +22,8 @@ end, so overlapping runs see the same work.
 
 In the test schedule (one 2-minute run, three 1000-second runs, then four
 2-minute runs, 10 new invoices per tick), `naive_export` reaches **4
-concurrent runs** and exports **60 invoices twice** out of 80.
+concurrent runs** and sends **60 duplicate exports**: 30 of the 80 invoices
+go out more than once (10 twice, 10 three times, 10 four times).
 
 ## Solution
 Each run must hold a **lease** (`LeaseLock`) for the job before it starts:

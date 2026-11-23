@@ -1,4 +1,5 @@
 import unittest
+from collections import Counter
 
 from solution import (CRASHED, INTERVAL_SECONDS, INVOICES_PER_INTERVAL, LEASE_TTL_SECONDS,
                       FakeClock, LeaseLock, guarded_export, naive_export)
@@ -20,6 +21,12 @@ class ReproduceProblem(unittest.TestCase):
         report = naive_export(SLOW_PERIOD)
         self.assertEqual(report.max_concurrent_runs, 4)
         self.assertEqual(report.duplicate_exports, 60)
+
+    def test_slow_runs_send_some_invoices_up_to_four_times(self):
+        report = naive_export(SLOW_PERIOD)
+        copies_per_invoice = Counter(report.export_counts.values())
+        self.assertEqual(copies_per_invoice, {1: 50, 2: 10, 3: 10, 4: 10})
+        self.assertEqual(report.invoices_duplicated, 30)
 
     def test_healthy_schedule_has_no_overlap_even_without_lock(self):
         report = naive_export([NORMAL] * 8)

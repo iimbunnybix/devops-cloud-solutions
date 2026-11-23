@@ -41,7 +41,7 @@ Every problem folder has the same structure:
 | 024 | [Login was down for every user during a single-zone power outage, although the service ran six replicas](problems/024-zone-spread-single-az-outage) |
 | 025 | [Rolling back a bad release made the outage worse: the old version crashed on every request](problems/025-rollback-unsafe-schema-migration) |
 | 026 | [On-call lowered the database connection limit during an incident, but the next deploy overloaded the database again](problems/026-config-typo-silent-default) |
-| 027 | [Accounting received the same invoices twice whenever the database was slow, because the 5-minute export started on top of itself](problems/027-overlapping-scheduled-job-runs) |
+| 027 | [Accounting received the same invoices several times whenever the database was slow, because the 5-minute export started on top of itself](problems/027-overlapping-scheduled-job-runs) |
 | 028 | [Checkout failed with "password authentication failed" for 20 minutes during a routine database password rotation](problems/028-db-password-rotation-outage) |
 | 029 | [Web servers failed every login with "No space left on device" while the disk dashboard showed 39% used](problems/029-inode-exhaustion-disk-alert) |
 | 030 | [Checkout was down for 40 minutes during a database maintenance window, and on-call never got the page](problems/030-overbroad-maintenance-silence) |
