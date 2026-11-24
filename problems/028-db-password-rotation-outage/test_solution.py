@@ -89,6 +89,23 @@ class FixDualCredentialRotation(unittest.TestCase):
         with self.assertRaises(RotationBlocked):
             self.rotation.finish(self.pods)
 
+    def test_rerun_in_a_new_process_refuses_to_start_during_rollout(self):
+        self.rotation.start()
+        self.pods[0].restart(self.db, self.store)
+        rerun = DualCredentialRotation(self.db, self.store)
+        with self.assertRaises(RotationBlocked):
+            rerun.start()
+        opened = [pod.open_connection(self.db) for pod in self.pods]
+        self.assertEqual(opened, [True, True, True, True])
+        self.assertEqual(self.db.failed_logins, 0)
+
+    def test_new_process_can_finish_a_rotation_started_elsewhere(self):
+        self.rotation.start()
+        rolling_restart(self.pods, self.db, self.store)
+        DualCredentialRotation(self.db, self.store).finish(self.pods)
+        self.assertEqual(self.rotation.phase, STABLE)
+        self.assertNotIn("checkout_a", self.db.passwords)
+
 
 class FixSafetyCheck(unittest.TestCase):
     def setUp(self):

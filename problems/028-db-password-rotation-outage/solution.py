@@ -144,7 +144,18 @@ class DualCredentialRotation:
         self.db = db
         self.store = store
         self.make_password = make_password
-        self.phase = STABLE
+
+    @property
+    def phase(self) -> str:
+        """Phase read from the secret store, not kept on this object.
+
+        WHY: rotation jobs run in a fresh process for each step, so in-memory
+        state would forget a rotation in progress. A published "previous"
+        credential means pods may still be using the old slot.
+        """
+        if self.store.latest.previous is not None:
+            return ROLLING_OUT
+        return STABLE
 
     def start(self) -> SecretVersion:
         """Put a new password on the inactive slot and publish current+previous."""
@@ -155,7 +166,6 @@ class DualCredentialRotation:
         new = Credential(new_username, self.make_password())
         # WHY: the database must accept the new credential before any pod sees it.
         self.db.set_password(new_username, new.password)
-        self.phase = ROLLING_OUT
         return self.store.publish(current=new, previous=old)
 
     def finish(self, pods: list[Pod]) -> None:
@@ -168,7 +178,6 @@ class DualCredentialRotation:
         rotating = self.store.latest
         self.db.revoke(rotating.previous.username)
         self.store.publish(current=rotating.current, previous=None)
-        self.phase = STABLE
 
     def blockers(self, pods: list[Pod]) -> list[str]:
         """Reasons the old credential is still in use (empty means safe)."""
