@@ -43,7 +43,7 @@ Every problem folder has the same structure:
 | 026 | [On-call lowered the database connection limit during an incident, but the next deploy overloaded the database again](problems/026-config-typo-silent-default) |
 | 027 | [Accounting received the same invoices several times whenever the database was slow, because the 5-minute export started on top of itself](problems/027-overlapping-scheduled-job-runs) |
 | 028 | [Checkout failed with "password authentication failed" for 20 minutes during a routine database password rotation](problems/028-db-password-rotation-outage) |
-| 029 | [Web servers failed every login with "No space left on device" while the disk dashboard showed 39% used](problems/029-inode-exhaustion-disk-alert) |
+| 029 | [Web servers failed every login with "No space left on device" while the disk dashboard showed 41% used](problems/029-inode-exhaustion-disk-alert) |
 | 030 | [Checkout was down for 40 minutes during a database maintenance window, and on-call never got the page](problems/030-overbroad-maintenance-silence) |
 | 031 | [Checkout failed for an hour after a deploy, and the error-rate alert stayed green because its metrics had disappeared](problems/031-alert-no-data-treated-as-healthy) |
 | 032 | [Customers were charged twice on the night the clocks went back, and in spring the daily finance report never arrived](problems/032-dst-local-time-cron-double-run) |

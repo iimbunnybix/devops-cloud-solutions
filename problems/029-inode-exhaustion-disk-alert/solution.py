@@ -21,6 +21,7 @@ from pathlib import PurePosixPath
 GIB = 1024 ** 3
 BLOCK_SIZE_BYTES = 4096            # smallest on-disk size of any non-empty file on ext4
 BYTES_PER_INODE = 16384            # mke2fs default inode_ratio
+ROOT_RESERVED_PERCENT = 5          # mke2fs default -m: blocks only root may use
 WARNING_PERCENT = 85.0
 CRITICAL_PERCENT = 95.0
 NAIVE_BYTES_ALERT_PERCENT = 90.0   # the only rule the original alert had
@@ -38,13 +39,23 @@ class FilesystemUsage:
     bytes_used: int
     inodes_total: int      # 0 when the filesystem allocates inodes dynamically
     inodes_used: int
+    bytes_reserved: int = 0    # blocks kept for root; the app cannot write into them
+
+    @property
+    def bytes_usable(self) -> int:
+        """Bytes a non-root process (the app) can ever use."""
+        return self.bytes_total - self.bytes_reserved
 
     @property
     def bytes_percent(self) -> float | None:
-        """None for zero-size pseudo filesystems (/proc, /sys) that cannot fill up."""
-        if self.bytes_total <= 0:
+        """Use% as ``df`` shows it, or None for zero-size pseudo filesystems (/proc, /sys).
+
+        WHY: measured against usable bytes, 100% is the moment app writes
+        fail, so CRITICAL at 95% still fires before that.
+        """
+        if self.bytes_usable <= 0:
             return None
-        return 100.0 * self.bytes_used / self.bytes_total
+        return 100.0 * self.bytes_used / self.bytes_usable
 
     @property
     def inodes_percent(self) -> float | None:
@@ -56,7 +67,7 @@ class FilesystemUsage:
     def can_create_file(self, size_bytes: int) -> bool:
         """A new file needs a free inode AND free blocks; either one running out fails it."""
         has_inode = self.inodes_total <= 0 or self.inodes_used < self.inodes_total
-        return has_inode and self.bytes_used + size_bytes <= self.bytes_total
+        return has_inode and self.bytes_used + size_bytes <= self.bytes_usable
 
 
 @dataclass(frozen=True)
@@ -111,9 +122,10 @@ def disk_alert(usage: FilesystemUsage) -> DiskAlert | None:
 
 def ext4_volume(mount: str, size_bytes: int, base_bytes_used: int,
                 base_inodes_used: int) -> FilesystemUsage:
-    """A freshly formatted ext4 volume: the inode count is fixed at mkfs time."""
+    """A freshly formatted ext4 volume: inode count and root reservation are fixed at mkfs time."""
+    reserved = size_bytes * ROOT_RESERVED_PERCENT // 100
     return FilesystemUsage(mount, size_bytes, base_bytes_used,
-                           size_bytes // BYTES_PER_INODE, base_inodes_used)
+                           size_bytes // BYTES_PER_INODE, base_inodes_used, reserved)
 
 
 def add_small_files(usage: FilesystemUsage, count: int, file_bytes: int) -> FilesystemUsage:
@@ -123,10 +135,11 @@ def add_small_files(usage: FilesystemUsage, count: int, file_bytes: int) -> File
     room_by_inodes = count
     if usage.inodes_total > 0:
         room_by_inodes = usage.inodes_total - usage.inodes_used
-    room_by_bytes = (usage.bytes_total - usage.bytes_used) // on_disk
+    room_by_bytes = (usage.bytes_usable - usage.bytes_used) // on_disk
     written = max(0, min(count, room_by_inodes, room_by_bytes))
     return FilesystemUsage(usage.mount, usage.bytes_total, usage.bytes_used + written * on_disk,
-                           usage.inodes_total, usage.inodes_used + written)
+                           usage.inodes_total, usage.inodes_used + written,
+                           usage.bytes_reserved)
 
 
 def hourly_samples(start: FilesystemUsage, hours: int, files_per_hour: int,

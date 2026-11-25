@@ -1,6 +1,6 @@
 import unittest
 
-from solution import (CRITICAL, GIB, WARNING, FilesystemUsage, directories_by_file_count,
+from solution import (BLOCK_SIZE_BYTES, CRITICAL, GIB, WARNING, FilesystemUsage, directories_by_file_count,
                       disk_alert, ext4_volume, first_alert_hour, first_failed_write_hour,
                       hourly_samples, naive_disk_alert)
 
@@ -29,11 +29,11 @@ def critical_only(fs: FilesystemUsage):
 
 
 class ReproduceProblem(unittest.TestCase):
-    def test_writes_start_failing_while_disk_is_under_forty_percent(self):
+    def test_writes_start_failing_while_disk_is_under_forty_five_percent(self):
         samples = session_host_week()
         failed_hour = first_failed_write_hour(samples, SESSION_FILE_BYTES)
         self.assertEqual(failed_hour, 106)
-        self.assertLess(samples[failed_hour - 1].bytes_percent, 40)
+        self.assertLess(samples[failed_hour - 1].bytes_percent, 45)
         self.assertEqual(samples[failed_hour - 1].inodes_percent, 100.0)
 
     def test_bytes_only_alert_never_fires_during_the_whole_week(self):
@@ -78,6 +78,24 @@ class FixAlertsOnInodes(unittest.TestCase):
         self.assertIsNone(proc.bytes_percent)
         self.assertIsNone(disk_alert(proc))
         self.assertIsNone(naive_disk_alert(proc))
+
+
+class FixRespectsRootReservedBlocks(unittest.TestCase):
+    def nearly_full_ext4(self, used_gib: int) -> FilesystemUsage:
+        """A 100 GiB ext4 /var with the default 5% of blocks reserved for root."""
+        return ext4_volume("/var", 100 * GIB, used_gib * GIB, base_inodes_used=1000)
+
+    def test_non_root_write_fails_when_only_reserved_blocks_are_left(self):
+        self.assertFalse(self.nearly_full_ext4(95).can_create_file(BLOCK_SIZE_BYTES))
+
+    def test_bytes_percent_matches_df_use_percent(self):
+        self.assertEqual(self.nearly_full_ext4(95).bytes_percent, 100.0)
+
+    def test_critical_fires_before_a_non_root_write_fails(self):
+        fs = self.nearly_full_ext4(91)
+        alert = disk_alert(fs)
+        self.assertEqual((alert.resource, alert.severity), ("bytes", CRITICAL))
+        self.assertTrue(fs.can_create_file(BLOCK_SIZE_BYTES))
 
 
 class FixHelpsTriage(unittest.TestCase):

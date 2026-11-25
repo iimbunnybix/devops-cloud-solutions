@@ -1,4 +1,4 @@
-# 029 · Web servers failed every login with "No space left on device" while the disk dashboard showed 39% used
+# 029 · Web servers failed every login with "No space left on device" while the disk dashboard showed 41% used
 
 ## Problem
 A fleet of PHP web servers stores user sessions as one small file per
@@ -9,7 +9,7 @@ every hour.
 
 Four and a half days later every login and checkout started failing:
 the app could not create a session file and logged `No space left on
-device`. On-call opened the disk dashboard and saw `/var` at 39% used, so
+device`. On-call opened the disk dashboard and saw `/var` at 41% used, so
 the first hour of the incident went into checking the application and the
 load balancer. Nobody was paged before customers were, because the disk
 alert had never fired.
@@ -23,7 +23,8 @@ plenty of space; `df -i` shows 100%.
 
 In the simulation (15 GiB and 200,000 inodes already in use, 60,000
 session files per hour, no cleanup), new files fail from **hour 106**, when
-inodes are at **100%** and bytes are at **39.2%**. The original rule
+inodes are at **100%** and bytes are at **41.3%** (measured like `df`
+Use%, against the space a non-root process may use). The original rule
 (`bytes used >= 90%`) does not fire once in the whole simulated week.
 
 ## Solution
@@ -38,6 +39,12 @@ at 85%, critical at 95%) and returns the worse one, naming whether it is
 - Filesystems that allocate inodes dynamically (btrfs, many network
   filesystems) report 0 total inodes; they are checked on bytes only,
   instead of dividing by zero or alerting falsely.
+- Bytes are measured like `df` Use%: against the volume size minus the
+  5% that ext4 reserves for root by default (`mke2fs -m 5`). The app is
+  not root, so its writes fail when the unreserved space is gone; at that
+  point bytes show 100%, and CRITICAL (95%) has already fired.
+- Zero-size pseudo filesystems such as `/proc` and `/sys` are skipped, so
+  an agent looping over every mount does not crash on the first one.
 - `directories_by_file_count` ranks directories by **number of files**,
   not size. `du` ranks by bytes and points at the large log and database
   files, which are not the problem here.
