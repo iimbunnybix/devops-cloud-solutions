@@ -73,6 +73,12 @@ class FixAlertsOnInodes(unittest.TestCase):
         self.assertIsNone(disk_alert(dynamic))
         self.assertTrue(dynamic.can_create_file(100))
 
+    def test_zero_size_pseudo_filesystem_gives_no_alert_and_does_not_raise(self):
+        proc = FilesystemUsage("/proc", 0, 0, inodes_total=0, inodes_used=0)
+        self.assertIsNone(proc.bytes_percent)
+        self.assertIsNone(disk_alert(proc))
+        self.assertIsNone(naive_disk_alert(proc))
+
 
 class FixHelpsTriage(unittest.TestCase):
     def test_file_count_ranking_points_at_the_session_directory(self):

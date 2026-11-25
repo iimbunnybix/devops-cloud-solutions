@@ -40,7 +40,10 @@ class FilesystemUsage:
     inodes_used: int
 
     @property
-    def bytes_percent(self) -> float:
+    def bytes_percent(self) -> float | None:
+        """None for zero-size pseudo filesystems (/proc, /sys) that cannot fill up."""
+        if self.bytes_total <= 0:
+            return None
         return 100.0 * self.bytes_used / self.bytes_total
 
     @property
@@ -66,7 +69,7 @@ class DiskAlert:
 
 def naive_disk_alert(usage: FilesystemUsage) -> DiskAlert | None:
     """The original rule: page only when bytes used crosses 90%."""
-    if usage.bytes_percent >= NAIVE_BYTES_ALERT_PERCENT:
+    if usage.bytes_percent is not None and usage.bytes_percent >= NAIVE_BYTES_ALERT_PERCENT:
         return DiskAlert(usage.mount, CRITICAL, "bytes", usage.bytes_percent)
     return None
 
@@ -82,12 +85,18 @@ def severity_for(percent: float) -> str:
 
 def disk_alert(usage: FilesystemUsage) -> DiskAlert | None:
     """Check bytes and inodes; return the worse of the two, or None if both are fine."""
-    candidates = [DiskAlert(usage.mount, severity_for(usage.bytes_percent), "bytes",
-                            usage.bytes_percent)]
+    candidates = []
+    # WHY: agents walk every mount, so a zero-size /proc must be skipped, not crash the loop.
+    bytes_percent = usage.bytes_percent
+    if bytes_percent is not None:
+        candidates.append(DiskAlert(usage.mount, severity_for(bytes_percent), "bytes",
+                                    bytes_percent))
     inode_percent = usage.inodes_percent
     if inode_percent is not None:
         candidates.append(DiskAlert(usage.mount, severity_for(inode_percent), "inodes",
                                     inode_percent))
+    if not candidates:
+        return None
     worst = candidates[0]
     for candidate in candidates[1:]:
         # WHY: on a tie in severity, prefer the fuller resource, because that one fails first.
