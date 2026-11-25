@@ -86,6 +86,7 @@ Every problem folder has the same structure:
 | 069 | [Checkout errors stayed near 8% for two hours and the error-rate alert never fired](problems/069-alert-pending-duration-resets-on-brief-dips) |
 | 070 | [Users reported a slow search API for a week while the 300 ms latency SLO dashboard stayed at 99.6%](problems/070-slo-threshold-between-histogram-buckets) |
 | 071 | [After the nightly log rotation, the first hour of access logs was missing from search on random hosts](problems/071-log-shipper-inode-reuse-resumes-at-old-offset) |
+| 072 | [The pipeline marked checkout v42 "deployed" in 0 seconds while every v42 pod was crash-looping](problems/072-rollout-done-check-counts-old-revision-pods) |
 <!-- INDEX:END -->
 
 ## Run the tests
