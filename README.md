@@ -88,6 +88,7 @@ Every problem folder has the same structure:
 | 071 | [After the nightly log rotation, the first hour of access logs was missing from search on random hosts](problems/071-log-shipper-inode-reuse-resumes-at-old-offset) |
 | 072 | [The pipeline marked checkout v42 "deployed" in 0 seconds while every v42 pod was crash-looping](problems/072-rollout-done-check-counts-old-revision-pods) |
 | 073 | [On-call was paged every minute all night by an error alert while nothing was failing](problems/073-log-alert-substring-error-matches-errors-zero) |
+| 074 | [Search returned errors for almost two hours while the auto-remediation bot restarted it 110 times and paged no one](problems/074-auto-restart-remediation-loops-without-paging) |
 <!-- INDEX:END -->
 
 ## Run the tests
