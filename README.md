@@ -90,6 +90,7 @@ Every problem folder has the same structure:
 | 073 | [On-call was paged every minute all night by an error alert while nothing was failing](problems/073-log-alert-substring-error-matches-errors-zero) |
 | 074 | [Search returned errors for almost two hours while the auto-remediation bot restarted it 110 times and paged no one](problems/074-auto-restart-remediation-loops-without-paging) |
 | 075 | [The incident timeline showed the database failing over nine hours after the app errors it caused](problems/075-local-time-log-timestamps-misorder-incident-timeline) |
+| 076 | [Every write to the config store failed for 35 seconds during a "zero-downtime" rolling restart](problems/076-rolling-restart-breaks-quorum-before-node-rejoins) |
 <!-- INDEX:END -->
 
 ## Run the tests
