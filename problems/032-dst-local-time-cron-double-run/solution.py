@@ -42,9 +42,16 @@ def run_instant_utc(day: date, wall_time: time, zone: ZoneInfo) -> datetime:
     its usual offset from the previous day. Nonexistent (clocks went
     forward): fold=0 maps it past the gap, e.g. 02:30 becomes 03:30 local,
     which is the earliest real moment after the requested time.
+
+    Some zones (e.g. America/Nuuk) jump from 23:00 straight to midnight, so
+    the rest of ``day`` never happens. Then the run happens at the jump
+    itself (next local midnight) and still counts as ``day``'s run.
     """
     local = datetime.combine(day, wall_time, tzinfo=zone)   # fold=0 by default
-    return local.astimezone(timezone.utc)
+    instant = local.astimezone(timezone.utc)
+    if instant.astimezone(zone).date() > day:
+        return local_midnight_utc(day + timedelta(days=1), zone)
+    return instant
 
 
 def naive_runs(start_utc: datetime, end_utc: datetime, wall_time: time,
@@ -68,19 +75,36 @@ class DailyJobScheduler:
     zone: ZoneInfo
     last_run_date: date | None = None
     runs: list[datetime] = field(default_factory=list)
+    run_dates: list[date] = field(default_factory=list)   # the local date each run was for
 
     def tick(self, now_utc: datetime) -> bool:
-        """Run the job if today's instant has passed and today has not run yet."""
-        today = now_utc.astimezone(self.zone).date()
-        if self.last_run_date == today:
-            return False
-        if now_utc < run_instant_utc(today, self.wall_time, self.zone):
+        """Run the job for the due local date, if any, and say whether it ran."""
+        due_date = self._due_date(now_utc)
+        if due_date is None:
             return False
         # WHY: keyed by local date, not by wall-clock match, so a repeated
         # hour cannot trigger a second run and a skipped hour cannot hide one.
-        self.last_run_date = today
+        self.last_run_date = due_date
         self.runs.append(now_utc)
+        self.run_dates.append(due_date)
         return True
+
+    def _due_date(self, now_utc: datetime) -> date | None:
+        """The local date whose run is due now and has not happened, or None."""
+        today = now_utc.astimezone(self.zone).date()
+        yesterday = today - timedelta(days=1)
+        # WHY: a gap that ends at midnight moves yesterday's run onto today,
+        # so yesterday must be checked first or it would be skipped.
+        yesterday_instant = run_instant_utc(yesterday, self.wall_time, self.zone)
+        pushed_into_today = yesterday_instant.astimezone(self.zone).date() == today
+        yesterday_done = self.last_run_date is not None and self.last_run_date >= yesterday
+        if pushed_into_today and not yesterday_done and now_utc >= yesterday_instant:
+            return yesterday
+        if self.last_run_date == today:
+            return None
+        if now_utc < run_instant_utc(today, self.wall_time, self.zone):
+            return None
+        return today
 
 
 def fixed_runs(start_utc: datetime, end_utc: datetime, wall_time: time, zone: ZoneInfo,

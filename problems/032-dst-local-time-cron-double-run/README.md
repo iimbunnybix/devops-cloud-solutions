@@ -49,7 +49,11 @@ matching wall-clock digits:
 Over 2026, both jobs run on **every one of the 365 local dates exactly
 once**. The same code handles other zones with different transition
 times: Berlin repeats 02:00-02:59 on 25 October 2026, and the 02:30 job
-runs once at 00:30 UTC (02:30 CEST).
+runs once at 00:30 UTC (02:30 CEST). Some zones jump straight from 23:00
+to midnight (America/Nuuk on 28 March 2026), so a 23:30 job has no real
+moment left on that date; it then runs at the jump (00:00 local on the
+29th) and is recorded as the 28th's run, so the scheduler checks
+yesterday's date as well as today's.
 
 ## Trade-offs
 - The simplest alternative is to schedule in **UTC**. That never repeats

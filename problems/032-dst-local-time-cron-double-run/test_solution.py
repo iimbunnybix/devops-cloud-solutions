@@ -8,6 +8,9 @@ from solution import (AMBIGUOUS, NONEXISTENT, NORMAL, DailyJobScheduler, classif
 
 NEW_YORK = ZoneInfo("America/New_York")
 BERLIN = ZoneInfo("Europe/Berlin")
+NUUK = ZoneInfo("America/Nuuk")      # springs forward at 23:00 local, straight to midnight
+NUUK_SPRING_FORWARD = date(2026, 3, 28)
+LATE_EVENING = time(23, 30)          # inside Nuuk's gap, which runs up to local midnight
 BILLING_TIME = time(1, 30)          # inside the repeated hour when clocks go back
 REPORT_TIME = time(2, 30)           # inside the skipped hour when clocks go forward
 SPRING_FORWARD = date(2026, 3, 8)   # US: 02:00 EST -> 03:00 EDT
@@ -86,6 +89,35 @@ class FixOneRunPerLocalDay(unittest.TestCase):
         fixed = fixed_runs(*one_local_day(fall_back_berlin, BERLIN), REPORT_TIME, BERLIN)
         self.assertEqual(len(naive), 2)
         self.assertEqual(fixed, [utc(2026, 10, 25, 0, 30)])         # 02:30 CEST
+
+
+class FixGapThatEndsAtMidnight(unittest.TestCase):
+    def run_nuuk_scheduler(self) -> DailyJobScheduler:
+        """Tick every minute through 27-30 March 2026 in Nuuk at 23:30."""
+        scheduler = DailyJobScheduler(LATE_EVENING, NUUK)
+        now = local_midnight_utc(date(2026, 3, 27), NUUK)
+        end = local_midnight_utc(date(2026, 3, 31), NUUK)
+        while now < end:
+            scheduler.tick(now)
+            now += timedelta(minutes=1)
+        return scheduler
+
+    def test_the_spring_forward_day_still_gets_its_run(self):
+        scheduler = self.run_nuuk_scheduler()
+        self.assertEqual(len(scheduler.runs), 4)
+
+    def test_each_local_date_is_run_exactly_once(self):
+        scheduler = self.run_nuuk_scheduler()
+        expected = [date(2026, 3, day) for day in (27, 28, 29, 30)]
+        self.assertEqual(scheduler.run_dates, expected)
+
+    def test_missing_time_runs_at_the_moment_the_clocks_jump(self):
+        transition = local_midnight_utc(NUUK_SPRING_FORWARD + timedelta(days=1), NUUK)
+        self.assertEqual(run_instant_utc(NUUK_SPRING_FORWARD, LATE_EVENING, NUUK), transition)
+
+    def test_ordinary_late_evening_in_nuuk_is_unchanged(self):
+        self.assertEqual(run_instant_utc(date(2026, 3, 27), LATE_EVENING, NUUK),
+                         datetime.combine(date(2026, 3, 27), LATE_EVENING, tzinfo=NUUK))
 
 
 if __name__ == "__main__":
