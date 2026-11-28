@@ -92,6 +92,7 @@ Every problem folder has the same structure:
 | 075 | [The incident timeline showed the database failing over nine hours after the app errors it caused](problems/075-local-time-log-timestamps-misorder-incident-timeline) |
 | 076 | [Every write to the config store failed for 35 seconds during a "zero-downtime" rolling restart](problems/076-rolling-restart-breaks-quorum-before-node-rejoins) |
 | 077 | [Checkout returned errors for 20 minutes and the error-rate alert never fired](problems/077-rate-window-shorter-than-scrape-interval-alert-never-fires) |
+| 078 | [Two big outages three days apart, and the error-budget policy never froze a single deploy](problems/078-calendar-month-error-budget-resets-mid-incident) |
 <!-- INDEX:END -->
 
 ## Run the tests
